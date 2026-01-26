@@ -1,0 +1,1 @@
+export type GameScene = "hub" | "projects" | "skills";

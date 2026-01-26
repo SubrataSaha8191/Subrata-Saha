@@ -3,10 +3,10 @@
 import SceneRoot from "@/components/three/SceneRoot";
 import HUD from "@/components/ui/HUD/HUD";
 
-export default function HomePage() {
+export default function SkillsPage() {
   return (
     <>
-      <SceneRoot scene="hub" />
+      <SceneRoot scene="skills" />
       <HUD />
     </>
   );
