@@ -61,7 +61,7 @@ export default function Tree({
 export function Forest({ count = 30, area = 60, avoidCenter = 15 }: { count?: number; area?: number; avoidCenter?: number }) {
   const trees = useMemo(() => {
     const positions: { pos: [number, number, number]; scale: number; leafColor: string }[] = [];
-    
+
     for (let i = 0; i < count; i++) {
       let x, z;
       do {
@@ -70,15 +70,25 @@ export function Forest({ count = 30, area = 60, avoidCenter = 15 }: { count?: nu
       } while (
         // Avoid center area (bridge + main area)
         (Math.abs(x) < avoidCenter && Math.abs(z) < avoidCenter) ||
-        // Avoid castle areas
-        (Math.abs(x - 25) < 12 && Math.abs(z + 20) < 12) ||
-        (Math.abs(x + 25) < 12 && Math.abs(z + 20) < 12)
+        // Avoid bridge path area
+        (Math.abs(x) < 5 && z > 10 && z < 30) ||
+        // Avoid castle areas - Projects and Skills (back)
+        (Math.abs(x - 25) < 18 && Math.abs(z + 25) < 18) ||
+        (Math.abs(x + 25) < 18 && Math.abs(z + 25) < 18) ||
+        // Avoid castle areas - About and Contact (sides)
+        (Math.abs(x - 30) < 18 && Math.abs(z - 10) < 18) ||
+        (Math.abs(x + 30) < 18 && Math.abs(z - 10) < 18) ||
+        // Avoid paths to castles
+        (x > 15 && x < 35 && z > -35 && z < -10) ||
+        (x < -15 && x > -35 && z > -35 && z < -10) ||
+        (x > 20 && x < 40 && z > -5 && z < 20) ||
+        (x < -20 && x > -40 && z > -5 && z < 20)
       );
-      
+
       const scale = 0.8 + Math.random() * 0.8;
       const leafColors = ["#228B22", "#2E8B57", "#32CD32", "#006400", "#3CB371"];
       const leafColor = leafColors[Math.floor(Math.random() * leafColors.length)];
-      
+
       positions.push({ pos: [x, 0, z], scale, leafColor });
     }
     return positions;

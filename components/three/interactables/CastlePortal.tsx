@@ -14,7 +14,13 @@ interface CastlePortalProps {
   label: string;
   href: string;
   castleColor?: string;
+  scale?: number;
 }
+
+// Door collision box dimensions
+const DOOR_WIDTH = 2.5;
+const DOOR_DEPTH = 0.5;
+const DOOR_HEIGHT = 5;
 
 export default function CastlePortal({
   position,
@@ -22,21 +28,61 @@ export default function CastlePortal({
   label,
   href,
   castleColor = "#6B7280",
+  scale = 1,
 }: CastlePortalProps) {
   const router = useRouter();
   const flagRef = useRef<THREE.Mesh>(null);
   const doorRef = useRef<THREE.Group>(null);
   const glowRef = useRef<THREE.Mesh>(null);
+  const flame1Ref = useRef<THREE.Mesh>(null);
+  const flame2Ref = useRef<THREE.Mesh>(null);
+  const doorCollisionRef = useRef<THREE.Mesh>(null);
 
   const isLoading = useGameStore((s) => s.isLoading);
   const setLoading = useGameStore((s) => s.setLoading);
   const playerPos = useGameStore((s) => s.playerPosition);
+  const enterRoom = useGameStore((s) => s.enterRoom);
   const setPrompt = useUIStore((s) => s.setInteractionPrompt);
 
   const pressE = useKeyPress("KeyE");
   const [canEnter, setCanEnter] = useState(false);
   const [doorOpen, setDoorOpen] = useState(false);
+  const [nearDoor, setNearDoor] = useState(false);
   const lastPressedRef = useRef(false);
+
+  // Calculate door world position based on castle position and rotation
+  const getDoorWorldPosition = () => {
+    const doorLocalPos = new THREE.Vector3(0, 0, 5.5 * scale);
+    const rotationMatrix = new THREE.Matrix4().makeRotationY(rotation[1]);
+    doorLocalPos.applyMatrix4(rotationMatrix);
+    return new THREE.Vector3(
+      position[0] + doorLocalPos.x,
+      position[1],
+      position[2] + doorLocalPos.z
+    );
+  };
+
+  // Check if player is colliding with closed door
+  const checkDoorCollision = (playerVec: THREE.Vector3) => {
+    if (doorOpen) return false;
+    
+    const doorWorldPos = getDoorWorldPosition();
+    
+    // Transform player position to door's local space
+    const relativePos = playerVec.clone().sub(doorWorldPos);
+    const inverseRotation = new THREE.Matrix4().makeRotationY(-rotation[1]);
+    relativePos.applyMatrix4(inverseRotation);
+    
+    // Check if player is within door bounds
+    const halfWidth = (DOOR_WIDTH * scale) / 2;
+    const halfDepth = (DOOR_DEPTH * scale) / 2;
+    
+    return (
+      Math.abs(relativePos.x) < halfWidth &&
+      Math.abs(relativePos.z) < halfDepth + 1 &&
+      relativePos.y < DOOR_HEIGHT * scale
+    );
+  };
 
   // Check if player is near the castle door
   useFrame(({ clock }) => {
@@ -45,6 +91,16 @@ export default function CastlePortal({
     // Animate flag
     if (flagRef.current) {
       flagRef.current.rotation.y = Math.sin(time * 2) * 0.2;
+    }
+
+    // Animate flames
+    if (flame1Ref.current) {
+      flame1Ref.current.scale.y = 1 + Math.sin(time * 8) * 0.2;
+      flame1Ref.current.rotation.z = Math.sin(time * 5) * 0.1;
+    }
+    if (flame2Ref.current) {
+      flame2Ref.current.scale.y = 1 + Math.cos(time * 7) * 0.2;
+      flame2Ref.current.rotation.z = Math.cos(time * 4) * 0.1;
     }
 
     // Animate door glow
@@ -66,23 +122,29 @@ export default function CastlePortal({
       );
     }
 
-    // Check distance to door
-    const doorWorldPos = new THREE.Vector3(
-      position[0],
-      position[1],
-      position[2] + 5
-    );
+    // Check distance to door (adjusted for scale)
+    const doorWorldPos = getDoorWorldPosition();
     const playerVec = new THREE.Vector3(playerPos[0], playerPos[1], playerPos[2]);
     const distance = playerVec.distanceTo(doorWorldPos);
 
-    if (distance < 5) {
+    const detectDistance = 6 * scale;
+    const closeDistance = 10 * scale;
+    const nearDoorDistance = 8 * scale;
+
+    // Show "E to interact" when near the door (but not close enough to enter)
+    if (distance < nearDoorDistance && distance > detectDistance) {
+      setNearDoor(true);
+      setPrompt(`Press E to interact with ${label} door`);
+    } else if (distance < detectDistance) {
       setCanEnter(true);
+      setNearDoor(false);
       setPrompt(`Press E to enter ${label}`);
       if (!doorOpen) setDoorOpen(true);
     } else {
       setCanEnter(false);
+      setNearDoor(false);
       setPrompt(null);
-      if (doorOpen && distance > 8) setDoorOpen(false);
+      if (doorOpen && distance > closeDistance) setDoorOpen(false);
     }
   });
 
@@ -91,17 +153,39 @@ export default function CastlePortal({
     const justPressed = pressE && !lastPressedRef.current;
     lastPressedRef.current = pressE;
 
-    if (!justPressed || !canEnter || isLoading) return;
+    if (!justPressed || isLoading) return;
+
+    // If near door but not close enough, open the door
+    if (nearDoor && !canEnter) {
+      setDoorOpen(true);
+      return;
+    }
+
+    if (!canEnter) return;
 
     setLoading(true);
+    // Enter room and set FPP mode
+    enterRoom(label.toLowerCase());
     setTimeout(() => {
       router.push(href);
       setLoading(false);
     }, 300);
-  }, [pressE, canEnter, isLoading, href, router, setLoading]);
+  }, [pressE, canEnter, nearDoor, isLoading, href, router, setLoading, enterRoom, label]);
 
   return (
-    <group position={position} rotation={rotation}>
+    <group position={position} rotation={rotation} scale={scale}>
+      {/* Invisible door collision box - blocks player when door is closed */}
+      {!doorOpen && (
+        <mesh
+          ref={doorCollisionRef}
+          position={[0, DOOR_HEIGHT / 2, 5.5]}
+          visible={false}
+        >
+          <boxGeometry args={[DOOR_WIDTH, DOOR_HEIGHT, DOOR_DEPTH]} />
+          <meshBasicMaterial transparent opacity={0} />
+        </mesh>
+      )}
+
       {/* Main castle body */}
       <mesh castShadow receiveShadow position={[0, 4, 0]}>
         <boxGeometry args={[10, 8, 10]} />
@@ -212,31 +296,58 @@ export default function CastlePortal({
             opacity={0.4}
           />
         </mesh>
-
-        {/* Torches */}
-        {[[-1.8, 3], [1.8, 3]].map(([x, y], i) => (
-          <group key={i} position={[x, y, 0.6]}>
-            <mesh>
-              <cylinderGeometry args={[0.1, 0.12, 0.6, 6]} />
-              <meshStandardMaterial color="#5D4037" />
-            </mesh>
-            <pointLight
-              position={[0, 0.5, 0]}
-              color="#ff6600"
-              intensity={3}
-              distance={8}
-            />
-            <mesh position={[0, 0.5, 0]}>
-              <coneGeometry args={[0.12, 0.35, 6]} />
-              <meshStandardMaterial
-                color="#ff4500"
-                emissive="#ff4500"
-                emissiveIntensity={2}
-              />
-            </mesh>
-          </group>
-        ))}
       </group>
+
+      {/* Large fire torches in front of castle entrance */}
+      {[[-4, 0, 8], [4, 0, 8]].map(([x, y, z], i) => (
+        <group key={`front-torch-${i}`} position={[x, y, z]}>
+          {/* Torch pillar/stand */}
+          <mesh castShadow receiveShadow position={[0, 1.5, 0]}>
+            <cylinderGeometry args={[0.25, 0.35, 3, 8]} />
+            <meshStandardMaterial color="#4A3728" roughness={0.9} />
+          </mesh>
+          {/* Torch top */}
+          <mesh castShadow position={[0, 3.1, 0]}>
+            <cylinderGeometry args={[0.35, 0.25, 0.3, 8]} />
+            <meshStandardMaterial color="#3E2723" roughness={0.8} />
+          </mesh>
+          {/* Fire bowl */}
+          <mesh castShadow position={[0, 3.3, 0]}>
+            <cylinderGeometry args={[0.4, 0.35, 0.3, 8]} />
+            <meshStandardMaterial color="#2D2D2D" roughness={0.7} />
+          </mesh>
+          {/* Main flame */}
+          <mesh ref={i === 0 ? flame1Ref : flame2Ref} position={[0, 3.8, 0]}>
+            <coneGeometry args={[0.3, 0.9, 8]} />
+            <meshStandardMaterial
+              color="#FF4500"
+              emissive="#FF4500"
+              emissiveIntensity={2.5}
+              transparent
+              opacity={0.9}
+            />
+          </mesh>
+          {/* Inner flame */}
+          <mesh position={[0, 3.7, 0]}>
+            <coneGeometry args={[0.15, 0.6, 6]} />
+            <meshStandardMaterial
+              color="#FFD700"
+              emissive="#FFD700"
+              emissiveIntensity={3}
+              transparent
+              opacity={0.95}
+            />
+          </mesh>
+          {/* Fire light */}
+          <pointLight
+            position={[0, 3.8, 0]}
+            color="#ff6600"
+            intensity={8}
+            distance={15}
+            decay={2}
+          />
+        </group>
+      ))}
 
       {/* Windows on castle body */}
       {[

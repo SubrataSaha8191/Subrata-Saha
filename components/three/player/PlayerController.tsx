@@ -12,8 +12,10 @@ const SPRINT_MULTIPLIER = 1.6;
 export default function PlayerController() {
   const playerRef = useRef<THREE.Mesh>(null);
 
+  const playerPosition = useGameStore((s) => s.playerPosition);
   const setPlayerPosition = useGameStore((s) => s.setPlayerPosition);
   const setPlayerObject = useGameStore((s) => s.setPlayerObject);
+  const roomInteractionState = useGameStore((s) => s.roomInteractionState);
 
   // ✅ Call hooks separately (NO short-circuit)
   const w = useKeyPress("KeyW");
@@ -45,6 +47,19 @@ export default function PlayerController() {
   useFrame((_, delta) => {
     const player = playerRef.current;
     if (!player) return;
+
+    // Disable movement when sitting on sofa or interacting
+    const isLocked = roomInteractionState === "sitting_sofa" || 
+                     roomInteractionState === "holding_remote" || 
+                     roomInteractionState === "watching_tv" ||
+                     roomInteractionState === "sitting_chair" ||
+                     roomInteractionState === "using_computer";
+    
+    if (isLocked) {
+      // Don't process movement input but keep position synced
+      // The room components control the position when locked
+      return;
+    }
 
     const speed = MOVE_SPEED * (sprint ? SPRINT_MULTIPLIER : 1);
 

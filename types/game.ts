@@ -1,1 +1,1 @@
-export type GameScene = "hub" | "projects" | "skills";
+export type GameScene = "hub" | "projects" | "skills" | "about" | "contact";
