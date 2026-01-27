@@ -3,9 +3,11 @@
 ## Required Sounds
 
 ### sip.mp3
+
 A short sipping sound effect for the AboutRoom coffee interaction.
 
 You can:
+
 1. Download a free sipping sound from sites like:
    - freesound.org
    - pixabay.com/sound-effects
