@@ -333,13 +333,31 @@ export default function AboutRoom() {
       }
     };
 
-    try {
-      const audio = new Audio('/audio/sip.mp3');
-      audio.volume = 0.6;
-      audio.play().catch(() => fallback());
-    } catch (e) {
+    // Try public root first ("/sip.mp3") since you added the file there; then fall back to "/audio/sip.mp3"; finally fall back to synthesized audio
+    const tryPlay = (src: string) => {
+      return new Promise<void>((resolve, reject) => {
+        try {
+          const a = new Audio(src);
+          a.volume = 0.9;
+          a.play().then(() => resolve()).catch((err) => reject(err));
+        } catch (err) {
+          reject(err);
+        }
+      });
+    };
+
+    (async () => {
+      const sources = ['/sip.mp3', '/audio/sip.mp3'];
+      for (const s of sources) {
+        try {
+          await tryPlay(s);
+          return;
+        } catch (e) {
+          // try next source
+        }
+      }
       fallback();
-    }
+    })();
   };
 
   // Enter room on mount
