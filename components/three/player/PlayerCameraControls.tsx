@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useGameStore } from "@/store/useGameStore";
+import { useUIStore } from "@/store/useUIStore";
 import { clamp } from "@/lib/utils/clamp";
 
 const FPP_DISTANCE_THRESHOLD = 2; // Distance at which we switch to FPP mode
@@ -15,7 +16,21 @@ export default function PlayerCameraControls() {
   const cameraMode = useGameStore((s) => s.cameraMode);
   const isInRoom = useGameStore((s) => s.isInRoom);
   const canControlCamera = useGameStore((s) => s.canControlCamera);
+  const sittingState = useGameStore((s) => s.sittingState);
+  const roomInteractionState = useGameStore((s) => s.roomInteractionState);
+  const isTVOn = useGameStore((s) => s.isTVOn);
+  const showTelephoneUI = useUIStore((s) => s.showTelephoneUI);
+  const showTelephoneRef = useRef(showTelephoneUI);
+  useEffect(() => { showTelephoneRef.current = showTelephoneUI; }, [showTelephoneUI]);
 
+  // Suppress immediate pointer lock requests for a short window after the telephone UI closes
+  const suppressUntilRef = useRef(0);
+  useEffect(() => {
+    if (!showTelephoneUI) {
+      // When UI closes, suppress pointer lock for 300ms to avoid clicks that triggered the close
+      suppressUntilRef.current = Date.now() + 300;
+    }
+  }, [showTelephoneUI]);
   const setYaw = useGameStore((s) => s.setCameraYaw);
   const setPitch = useGameStore((s) => s.setCameraPitch);
   const setDistance = useGameStore((s) => s.setCameraDistance);
@@ -39,6 +54,15 @@ export default function PlayerCameraControls() {
     };
 
     const onMouseMove = (e: MouseEvent) => {
+      // Lock camera when sitting - only allow limited vertical movement
+      if (sittingState.isSitting) {
+        const sensitivity = 0.001;
+        // Only allow slight pitch adjustment, no yaw when sitting
+        const nextPitch = pitch + e.movementY * sensitivity;
+        setPitch(clamp(nextPitch, -0.3, 0.5));
+        return;
+      }
+      
       // In FPP mode, mouse movement directly controls camera (no click needed)
       if (cameraMode === "fpp") {
         const sensitivity = 0.002;
@@ -61,8 +85,8 @@ export default function PlayerCameraControls() {
     };
 
     const onWheel = (e: WheelEvent) => {
-      // Disable scroll/zoom when in a room
-      if (isInRoom) {
+      // Disable scroll/zoom when in a room or sitting
+      if (isInRoom || sittingState.isSitting) {
         e.preventDefault();
         return;
       }
@@ -75,13 +99,20 @@ export default function PlayerCameraControls() {
 
       // Update camera mode based on distance
       if (clampedDistance <= FPP_DISTANCE_THRESHOLD && cameraMode === "tpp") {
+        // Switch to FPP mode (do NOT request pointer lock here since wheel isn't guaranteed to be a user gesture)
         setCameraMode("fpp");
-        // Request pointer lock for FPP mode
-        document.body.requestPointerLock?.();
+        // User should click to engage pointer lock (handled by the click handler)
       } else if (clampedDistance > FPP_DISTANCE_THRESHOLD && cameraMode === "fpp") {
         setCameraMode("tpp");
-        // Exit pointer lock when going back to TPP
-        document.exitPointerLock?.();
+        // Exit pointer lock when going back to TPP - only if locked
+        if (document.pointerLockElement) {
+          try {
+            document.exitPointerLock?.();
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.warn("Pointer lock exit failed:", err);
+          }
+        }
       }
     };
 
@@ -112,28 +143,64 @@ export default function PlayerCameraControls() {
       window.removeEventListener("contextmenu", preventContextMenu);
       document.removeEventListener("pointerlockchange", onPointerLockChange);
     };
-  }, [yaw, pitch, distance, cameraMode, isInRoom, setYaw, setPitch, setDistance, setCameraMode]);
+  }, [yaw, pitch, distance, cameraMode, isInRoom, sittingState.isSitting, setYaw, setPitch, setDistance, setCameraMode]);
 
-  // Force FPP mode when entering a room
+  // Force FPP mode when entering a room (do NOT request pointer lock programmatically)
   useEffect(() => {
     if (isInRoom) {
       setCameraMode("fpp");
       setDistance(0.5);
-      document.body.requestPointerLock?.();
+      // Do NOT call requestPointerLock() here — it must be triggered by a user gesture (click)
+      // The click handler below will request pointer lock when the user clicks the canvas.
     }
   }, [isInRoom, setCameraMode, setDistance]);
 
   // Click to enter pointer lock in FPP mode
   useEffect(() => {
     const onClick = () => {
+      // If any UI modal that requires the cursor is open, do not request pointer lock
+      if (showTelephoneRef.current) return;
+
+      if (roomInteractionState === "watching_tv" && isTVOn) {
+        if (document.pointerLockElement) {
+          try {
+            document.exitPointerLock?.();
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.warn("Pointer lock exit failed:", err);
+          }
+        }
+        return;
+      }
+
       if (cameraMode === "fpp" && !document.pointerLockElement) {
-        document.body.requestPointerLock?.();
+        // Do not request pointer lock if we are within the suppression window
+        if (Date.now() < suppressUntilRef.current) return;
+
+        const safeRequest = () => {
+          try {
+            const canvas = document.querySelector("canvas") as HTMLCanvasElement | null;
+            if (canvas?.requestPointerLock) canvas.requestPointerLock();
+            else document.body.requestPointerLock?.();
+          } catch (err: any) {
+            // Ignore SecurityError that occurs when user exits the lock before completion
+            if (err?.name === "SecurityError" || /exited the lock/i.test(String(err))) {
+              // no-op
+              return;
+            }
+            // eslint-disable-next-line no-console
+            console.warn("Pointer lock request failed:", err);
+          }
+        };
+
+        // Call request in a microtask to avoid immediate race with other event handlers
+        Promise.resolve().then(safeRequest);
       }
     };
 
     window.addEventListener("click", onClick);
     return () => window.removeEventListener("click", onClick);
-  }, [cameraMode]);
+  }, [cameraMode, roomInteractionState, isTVOn, showTelephoneUI]);
 
   return null;
 }

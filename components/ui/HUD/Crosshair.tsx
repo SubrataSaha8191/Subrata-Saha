@@ -1,6 +1,12 @@
 "use client";
 
+import { useUIStore } from "@/store/useUIStore";
+
 export default function Crosshair() {
+  const showTelephoneUI = useUIStore((s) => s.showTelephoneUI);
+
+  if (showTelephoneUI) return null;
+
   return (
     <div
       style={{

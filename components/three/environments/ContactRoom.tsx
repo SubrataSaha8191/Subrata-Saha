@@ -3,6 +3,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { Html } from "@react-three/drei";
 import { useKeyPress } from "@/hooks/useKeyPress";
 import { useGameStore } from "@/store/useGameStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -32,7 +33,7 @@ function Generator({ position, isOn, onInteract }: {
   });
 
   return (
-    <group position={position}>
+    <group position={position} scale={3.5}>
       {/* Main body */}
       <mesh castShadow receiveShadow>
         <boxGeometry args={[0.6, 0.9, 0.4]} />
@@ -85,7 +86,7 @@ function Generator({ position, isOn, onInteract }: {
 // Telephone component (wall-mounted)
 function Telephone({ position, hasPower }: { position: [number, number, number]; hasPower: boolean }) {
   return (
-    <group position={position}>
+    <group position={position} scale={4.5}>
       {/* Phone body */}
       <mesh castShadow>
         <boxGeometry args={[0.25, 0.35, 0.1]} />
@@ -148,98 +149,75 @@ function Telephone({ position, hasPower }: { position: [number, number, number];
   );
 }
 
-// Secret message above door
+// Secret message above door - appears only when player discovers it after entering the room
 function SecretMessage({ position }: { position: [number, number, number] }) {
+  const playerPos = useGameStore((s) => s.playerPosition);
+  const isInRoom = useGameStore((s) => s.isInRoom);
+  const currentRoom = useGameStore((s) => s.currentRoom);
+  const [revealed, setRevealed] = useState(false);
+  const REVEAL_DISTANCE = 1.5; // player must be very close to reveal
+
+  useEffect(() => {
+    // Reset reveal when player leaves the room so they must find it again next visit
+    if (!isInRoom || currentRoom !== "contact") {
+      if (revealed) setRevealed(false);
+      return;
+    }
+
+    // Use planar distance (ignore vertical difference) so player can discover the note without getting to ceiling height
+    const dx = playerPos[0] - position[0];
+    const dz = playerPos[2] - position[2];
+    const planarDist = Math.hypot(dx, dz);
+    const REVEAL_PLANAR = 2.5; // horizontal proximity to reveal
+
+    if (planarDist < REVEAL_PLANAR && !revealed) setRevealed(true);
+  }, [playerPos, position, revealed, isInRoom, currentRoom]);
+
+  if (!revealed) return null;
+
   return (
     <group position={position}>
-      {/* Note paper background */}
+      {/* Sticky note background */}
       <mesh>
-        <planeGeometry args={[2.5, 0.6]} />
-        <meshStandardMaterial 
-          color="#FFFDD0" 
-          roughness={0.9}
-          emissive="#FFFDD0"
-          emissiveIntensity={0.2}
-        />
+        <planeGeometry args={[6, 2.2]} />
+        <meshStandardMaterial color="#FFE87C" roughness={0.9} />
       </mesh>
-      
-      {/* Text - "ACCESS CODE: 4582" using 3D text meshes */}
-      {/* A */}
-      <mesh position={[-1.0, 0.15, 0.01]}>
-        <boxGeometry args={[0.08, 0.25, 0.01]} />
-        <meshStandardMaterial color="#000000" />
+
+      {/* Actual readable text using Html */}
+      <Html
+        position={[0, 0, 0.02]}
+        rotation={[0, Math.PI, 0]}
+        transform
+        distanceFactor={1.8}
+        style={{
+          width: '550px',
+          padding: '20px',
+          color: '#000000',
+          fontSize: '18px',
+          fontFamily: 'Comic Sans MS, cursive',
+          textAlign: 'center',
+          lineHeight: '1.5',
+          pointerEvents: 'none',
+          userSelect: 'none',
+        }}
+      >
+        <div>
+          <p style={{ margin: '0 0 8px 0', fontWeight: 600 }}>Hello there, I'm Subrata's one of the</p>
+          <p style={{ margin: '0 0 8px 0', fontWeight: 600 }}>mischievous friend and I like to expose</p>
+          <p style={{ margin: '0 0 12px 0', fontWeight: 600 }}>his secrets. The access code of the</p>
+          <p style={{ margin: '0 0 12px 0', fontWeight: 600 }}>telephone is <span style={{ fontSize: '32px', fontWeight: 'bold' }}>4582</span></p>
+          <p style={{ margin: '0', fontWeight: 600, fontSize: '20px' }}>Thank me later! </p>
+        </div>
+      </Html>
+
+      {/* Shadow/edge for sticky note effect */}
+      <mesh position={[0.05, -0.05, -0.005]}>
+        <planeGeometry args={[6, 2.2]} />
+        <meshStandardMaterial color="#D4A574" opacity={0.3} transparent />
       </mesh>
-      {/* C */}
-      <mesh position={[-0.85, 0.15, 0.01]}>
-        <boxGeometry args={[0.08, 0.25, 0.01]} />
-        <meshStandardMaterial color="#000000" />
-      </mesh>
-      {/* C */}
-      <mesh position={[-0.7, 0.15, 0.01]}>
-        <boxGeometry args={[0.08, 0.25, 0.01]} />
-        <meshStandardMaterial color="#000000" />
-      </mesh>
-      {/* E */}
-      <mesh position={[-0.55, 0.15, 0.01]}>
-        <boxGeometry args={[0.08, 0.25, 0.01]} />
-        <meshStandardMaterial color="#000000" />
-      </mesh>
-      {/* S */}
-      <mesh position={[-0.4, 0.15, 0.01]}>
-        <boxGeometry args={[0.08, 0.25, 0.01]} />
-        <meshStandardMaterial color="#000000" />
-      </mesh>
-      {/* S */}
-      <mesh position={[-0.25, 0.15, 0.01]}>
-        <boxGeometry args={[0.08, 0.25, 0.01]} />
-        <meshStandardMaterial color="#000000" />
-      </mesh>
-      
-      {/* CODE text */}
-      <mesh position={[0.0, 0.15, 0.01]}>
-        <boxGeometry args={[0.08, 0.25, 0.01]} />
-        <meshStandardMaterial color="#000000" />
-      </mesh>
-      <mesh position={[0.15, 0.15, 0.01]}>
-        <boxGeometry args={[0.08, 0.25, 0.01]} />
-        <meshStandardMaterial color="#000000" />
-      </mesh>
-      <mesh position={[0.3, 0.15, 0.01]}>
-        <boxGeometry args={[0.08, 0.25, 0.01]} />
-        <meshStandardMaterial color="#000000" />
-      </mesh>
-      <mesh position={[0.45, 0.15, 0.01]}>
-        <boxGeometry args={[0.08, 0.25, 0.01]} />
-        <meshStandardMaterial color="#000000" />
-      </mesh>
-      
-      {/* Code numbers: 4582 - larger and more visible */}
-      <mesh position={[-0.4, -0.1, 0.01]}>
-        <boxGeometry args={[0.15, 0.3, 0.02]} />
-        <meshStandardMaterial color="#FF0000" emissive="#FF0000" emissiveIntensity={0.5} />
-      </mesh>
-      <mesh position={[-0.1, -0.1, 0.01]}>
-        <boxGeometry args={[0.15, 0.3, 0.02]} />
-        <meshStandardMaterial color="#FF0000" emissive="#FF0000" emissiveIntensity={0.5} />
-      </mesh>
-      <mesh position={[0.2, -0.1, 0.01]}>
-        <boxGeometry args={[0.15, 0.3, 0.02]} />
-        <meshStandardMaterial color="#FF0000" emissive="#FF0000" emissiveIntensity={0.5} />
-      </mesh>
-      <mesh position={[0.5, -0.1, 0.01]}>
-        <boxGeometry args={[0.15, 0.3, 0.02]} />
-        <meshStandardMaterial color="#FF0000" emissive="#FF0000" emissiveIntensity={0.5} />
-      </mesh>
-      
-      {/* Border frame */}
-      <mesh position={[0, 0, -0.005]}>
-        <planeGeometry args={[2.6, 0.7]} />
-        <meshStandardMaterial color="#654321" />
-      </mesh>
-      
-      {/* Dedicated light to illuminate the sign */}
-      <pointLight position={[0, -0.3, 0.5]} intensity={10} distance={2.5} color="#FFFFCC" />
-      <pointLight position={[0, 0, 0.3]} intensity={5} distance={1.5} color="#FFFFFF" />
+
+      {/* Soft light to illuminate the note */}
+      <pointLight position={[0, 0, 0.8]} intensity={15} distance={3} color="#FFFACD" />
     </group>
   );
 }
@@ -282,16 +260,16 @@ function WoodenDoor({ position, rotation = [0, 0, 0] }: { position: [number, num
         <meshStandardMaterial color="#3a2718" roughness={0.8} />
       </mesh>
       {/* Door panels */}
-      <mesh castShadow position={[0, 1.2, 0.08]}>
+      <mesh castShadow position={[0, 0.6, 0.08]}>
         <boxGeometry args={[2, 1.4, 0.08]} />
         <meshStandardMaterial color="#4a3728" roughness={0.7} />
       </mesh>
-      <mesh castShadow position={[0, -0.6, 0.08]}>
+      <mesh castShadow position={[0, -0.8, 0.08]}>
         <boxGeometry args={[2, 1.4, 0.08]} />
         <meshStandardMaterial color="#4a3728" roughness={0.7} />
       </mesh>
-      {/* Door handle */}
-      <mesh castShadow position={[-0.7, 0.2, 0.15]}>
+      {/* Door handle - single handle on door only */}
+      <mesh castShadow position={[-0.7, 0, 0.15]}>
         <sphereGeometry args={[0.08, 12, 12]} />
         <meshStandardMaterial color="#C0C0C0" metalness={0.9} roughness={0.3} />
       </mesh>
@@ -305,6 +283,27 @@ function WoodenDoor({ position, rotation = [0, 0, 0] }: { position: [number, num
 }
 
 export default function ContactRoom() {
+
+  useFrame(() => {
+      // Wall collision/bounds
+      const player = useGameStore.getState().playerObject;
+      if (player) {
+        const { x, z } = player.position;
+        const halfWidth = ROOM_WIDTH / 2 - 0.5; // reduce by radius
+        const halfDepth = ROOM_DEPTH / 2 - 0.5;
+  
+        // Clamp x
+        if (Math.abs(x) > halfWidth) {
+          player.position.x = Math.sign(x) * halfWidth;
+        }
+        // Clamp z (adjust for door specifically?)
+        // Door is at +halfDepth. If z > halfDepth - padding?
+        if (Math.abs(z) > halfDepth) {
+           player.position.z = Math.sign(z) * halfDepth;
+        }
+      }
+  });
+  
   const playerPos = useGameStore((s) => s.playerPosition);
   const setPlayerPosition = useGameStore((s) => s.setPlayerPosition);
   const roomInteractionState = useGameStore((s) => s.roomInteractionState);
@@ -339,9 +338,11 @@ export default function ContactRoom() {
   }, [enterRoom, setShowTelephoneUI, setShowContactCard]);
 
   // Positions
-  const telephonePos: [number, number, number] = [0, 1.5, -ROOM_DEPTH / 2 + 0.2];
-  const generatorPos: [number, number, number] = [-1.5, 0.45, -ROOM_DEPTH / 2 + 0.3];
-  const secretNotePos: [number, number, number] = [0, ROOM_HEIGHT - 0.4, ROOM_DEPTH / 2 - 0.1];
+  // Moved apart to avoid collision (generator left, telephone right)
+  const telephonePos: [number, number, number] = [2.0, 1.5, -ROOM_DEPTH / 2 + 0.15];
+  const generatorPos: [number, number, number] = [-2.8, 0.45, -ROOM_DEPTH / 2 + 0.6];
+  // Place sticky note centered above the door on front wall
+  const secretNotePos: [number, number, number] = [0, ROOM_HEIGHT - 0.8, ROOM_DEPTH / 2 - 0.05];
 
   // Check distances and handle interactions
   useFrame(() => {
@@ -460,11 +461,11 @@ export default function ContactRoom() {
       </mesh>
       {/* Front wall with door */}
       <mesh receiveShadow position={[-ROOM_WIDTH / 4 - 0.75, ROOM_HEIGHT / 2, ROOM_DEPTH / 2]}>
-        <boxGeometry args={[ROOM_WIDTH / 2 - 1.5, ROOM_HEIGHT, 0.2]} />
+        <boxGeometry args={[ROOM_WIDTH - 1.5, ROOM_HEIGHT, 0.2]} />
         <meshStandardMaterial color={WALL_COLOR} roughness={0.9} />
       </mesh>
       <mesh receiveShadow position={[ROOM_WIDTH / 4 + 0.75, ROOM_HEIGHT / 2, ROOM_DEPTH / 2]}>
-        <boxGeometry args={[ROOM_WIDTH / 2 - 1.5, ROOM_HEIGHT, 0.2]} />
+        <boxGeometry args={[ROOM_WIDTH - 1.5, ROOM_HEIGHT, 0.2]} />
         <meshStandardMaterial color={WALL_COLOR} roughness={0.9} />
       </mesh>
       {/* Above door */}
@@ -518,7 +519,7 @@ export default function ContactRoom() {
       )}
 
       {/* Exit door */}
-      <WoodenDoor position={[0, 1.75, ROOM_DEPTH / 2 - 0.1]} />
+      <WoodenDoor position={[0, 1.75, ROOM_DEPTH / 2 - 0.1]} rotation={[0, Math.PI, 0]} />
     </group>
   );
 }

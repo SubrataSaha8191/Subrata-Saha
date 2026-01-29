@@ -439,10 +439,11 @@ export default function HubWorld() {
 
       {/* Decorative stone pillars with fire torches - FIXED: positioned on ground */}
       {[
-        [5, 1.5, 5],
-        [-5, 1.5, 5],
-        [8, 1.5, -5],
-        [-8, 1.5, -5],
+        [4, 1.5, 5],
+        [-4, 1.5, 5],
+        [8, 1.5, -2],
+        [0, 1.5, -5],
+        [-8, 1.5, -2],
       ].map((pos, i) => (
         <group key={i} position={pos as [number, number, number]}>
           {/* Pillar - base at y=0 */}

@@ -66,7 +66,7 @@ function RoundTable({ position }: { position: [number, number, number] }) {
     <group position={position}>
       {/* Table top */}
       <mesh castShadow receiveShadow position={[0, 0.45, 0]}>
-        <cylinderGeometry args={[0.6, 0.6, 0.06, 24]} />
+        <cylinderGeometry args={[1.1, 1.1, 0.06, 42]} />
         <meshStandardMaterial color="#5D4037" roughness={0.7} />
       </mesh>
       {/* Table leg */}
@@ -76,7 +76,7 @@ function RoundTable({ position }: { position: [number, number, number] }) {
       </mesh>
       {/* Base */}
       <mesh castShadow receiveShadow position={[0, 0.02, 0]}>
-        <cylinderGeometry args={[0.3, 0.35, 0.04, 16]} />
+        <cylinderGeometry args={[0.7, 0.5, 0.4, 16]} />
         <meshStandardMaterial color="#4E342E" roughness={0.8} />
       </mesh>
     </group>
@@ -210,16 +210,16 @@ function WoodenDoor({ position, rotation = [0, 0, 0] }: { position: [number, num
     <group position={position} rotation={rotation}>
       {/* Door frame */}
       <mesh castShadow receiveShadow position={[0, 0, 0]}>
-        <boxGeometry args={[2.2, 3.5, 0.15]} />
+        <boxGeometry args={[4, 5, 0.15]} />
         <meshStandardMaterial color="#3a2718" roughness={0.8} />
       </mesh>
       {/* Door panels */}
       <mesh castShadow position={[0, 1.2, 0.08]}>
-        <boxGeometry args={[2, 1.4, 0.08]} />
+        <boxGeometry args={[3, 1.4, 0.08]} />
         <meshStandardMaterial color="#4a3728" roughness={0.7} />
       </mesh>
       <mesh castShadow position={[0, -0.6, 0.08]}>
-        <boxGeometry args={[2, 1.4, 0.08]} />
+        <boxGeometry args={[3, 1.4, 0.08]} />
         <meshStandardMaterial color="#4a3728" roughness={0.7} />
       </mesh>
       {/* Door handle */}
@@ -245,10 +245,34 @@ export default function AboutRoom() {
   const setDialogueIndex = useGameStore((s) => s.setDialogueIndex);
   const isDialogueActive = useGameStore((s) => s.isDialogueActive);
   const setIsDialogueActive = useGameStore((s) => s.setIsDialogueActive);
+  const sittingState = useGameStore((s) => s.sittingState);
+  const sitDown = useGameStore((s) => s.sitDown);
+  const standUp = useGameStore((s) => s.standUp);
   const enterRoom = useGameStore((s) => s.enterRoom);
   
   const setPrompt = useUIStore((s) => s.setInteractionPrompt);
   const setDialogueText = useUIStore((s) => s.setDialogueText);
+
+  useFrame(() => {
+    // Wall collision/bounds - skip when sitting
+    const player = useGameStore.getState().playerObject;
+    const currentSittingState = useGameStore.getState().sittingState;
+    
+    if (currentSittingState.isSitting) return;
+    
+    if (player) {
+      const { x, z } = player.position;
+      const halfWidth = ROOM_WIDTH / 2 - 0.5;
+      const halfDepth = ROOM_DEPTH / 2 - 0.5;
+
+      if (Math.abs(x) > halfWidth) {
+        player.position.x = Math.sign(x) * halfWidth;
+      }
+      if (Math.abs(z) > halfDepth) {
+         player.position.z = Math.sign(z) * halfDepth;
+      }
+    }
+  });
   const setDialogueSpeaker = useUIStore((s) => s.setDialogueSpeaker);
   
   const pressE = useKeyPress("KeyE");
@@ -264,10 +288,63 @@ export default function AboutRoom() {
   const sipTimerRef = useRef<NodeJS.Timeout | null>(null);
   const dialogueTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Play a short "sip" sound. Tries /audio/sip.mp3 first, falls back to Web Audio synth if not available.
+  const playSipSound = () => {
+    if (typeof window === "undefined") return;
+
+    const fallback = () => {
+      try {
+        const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+        const ctx = new AudioContext();
+        const now = ctx.currentTime;
+
+        // Sine tone for body
+        const osc = ctx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(600, now);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.6, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.3);
+
+        // Light filtered noise for the "sip" texture
+        const bufferSize = Math.floor(ctx.sampleRate * 0.18);
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / bufferSize);
+        }
+        const noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+        const noiseFilter = ctx.createBiquadFilter();
+        noiseFilter.type = "lowpass";
+        noiseFilter.frequency.setValueAtTime(1500, now);
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.6, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+        noise.connect(noiseFilter).connect(noiseGain).connect(ctx.destination);
+        noise.start(now);
+        noise.stop(now + 0.2);
+      } catch (e) {
+        // no-op if WebAudio unavailable
+      }
+    };
+
+    try {
+      const audio = new Audio('/audio/sip.mp3');
+      audio.volume = 0.6;
+      audio.play().catch(() => fallback());
+    } catch (e) {
+      fallback();
+    }
+  };
+
   // Enter room on mount
   useEffect(() => {
     enterRoom("about");
-    // Spawn player inside room
     setPlayerPosition([0, 0.9, 5]);
     
     // Start NPC sipping animation loop
@@ -286,6 +363,7 @@ export default function AboutRoom() {
   // Positions
   const npcSofaPos: [number, number, number] = [0, 0, -2.9];
   const playerSofaPos: [number, number, number] = [0, 0, 3];
+  const seatPosition: [number, number, number] = [0, 0.7, 3.3]; // Seated position
   const tablePos: [number, number, number] = [0, 0, 0];
   const playerCoffeePos: [number, number, number] = [0.3, 0.48, 0];
 
@@ -318,19 +396,20 @@ export default function AboutRoom() {
     
     const distToSofa = playerVec.distanceTo(sofaVec);
 
-    // Handle E key press
     const justPressedE = pressE && !lastERef.current;
     lastERef.current = pressE;
 
-    // Handle Q key press  
     const justPressedQ = pressQ && !lastQRef.current;
     lastQRef.current = pressQ;
 
-    // Handle ESC key press
     const justPressedEsc = pressEsc && !lastEscRef.current;
     lastEscRef.current = pressEsc;
 
-    // State machine for interactions
+    // Keep player locked when sitting
+    if (sittingState.isSitting) {
+      setPlayerPosition(sittingState.seatPosition);
+    }
+
     switch (roomInteractionState) {
       case "none":
         if (distToSofa < 2.5) {
@@ -339,8 +418,8 @@ export default function AboutRoom() {
             setRoomInteractionState("talking_npc");
             setIsDialogueActive(true);
             setDialogueIndex(0);
-            // Lock player to sofa position
-            setPlayerPosition([playerSofaPos[0], 0.5, playerSofaPos[2] + 0.3]);
+            // Sit down facing the NPC
+            sitDown(seatPosition, npcSofaPos);
           }
         } else {
           setPrompt(null);
@@ -348,11 +427,8 @@ export default function AboutRoom() {
         break;
 
       case "talking_npc":
-        // Keep player locked to sofa
-        setPlayerPosition([playerSofaPos[0], 0.5, playerSofaPos[2] + 0.3]);
-        
         if (!playerHoldingCoffee) {
-          setPrompt("Press E to pick up coffee");
+          setPrompt("Press E to pick up coffee - Press ESC to leave");
           if (justPressedE) {
             setPlayerHoldingCoffee(true);
             setRoomInteractionState("holding_coffee");
@@ -360,27 +436,22 @@ export default function AboutRoom() {
         }
         if (justPressedEsc) {
           setIsDialogueActive(false);
-          setRoomInteractionState("none");
+          standUp();
           setPlayerHoldingCoffee(false);
         }
         break;
 
       case "holding_coffee":
-        // Keep player locked to sofa
-        setPlayerPosition([playerSofaPos[0], 0.5, playerSofaPos[2] + 0.3]);
-        
         setPrompt("Press Q to sip coffee - Press ESC to leave");
         if (justPressedQ && !playerSipping) {
           setPlayerSipping(true);
-          // Play sipping sound
-          const audio = new Audio('/audio/sip.mp3');
-          audio.volume = 0.5;
-          audio.play().catch(() => {}); // Ignore errors if sound file missing
+          // play the sip sound (file first, fallback to WebAudio synth)
+          playSipSound();
           sipTimerRef.current = setTimeout(() => setPlayerSipping(false), 1000);
         }
         if (justPressedEsc) {
           setIsDialogueActive(false);
-          setRoomInteractionState("none");
+          standUp();
           setPlayerHoldingCoffee(false);
         }
         break;
@@ -449,31 +520,39 @@ export default function AboutRoom() {
       
       {/* NPC on sofa */}
       <NPCCharacter position={[0, 0.15, -2.5]} isSipping={npcSipping} />
-      {/* Coffee in player hand when holding */}
-      {playerHoldingCoffee && (
-        <group position={[playerPos[0] + 0.3, playerPos[1] + 0.8, playerPos[2] - 0.2]}>
-          <mesh castShadow>
-            <cylinderGeometry args={[0.08, 0.06, 0.12, 16]} />
+      
+      {/* Coffee mug in player hand when holding - fixed position relative to seated player */}
+      {playerHoldingCoffee && sittingState.isSitting && (
+        <group position={[sittingState.seatPosition[0] + 0.25, sittingState.seatPosition[1] + 0.1, sittingState.seatPosition[2] - 0.25]}>
+          {/* Coffee mug */}
+          <mesh castShadow rotation={playerSipping ? [-0.5, 0, 0] : [0, 0, 0]}>
+            <cylinderGeometry args={[0.06, 0.05, 0.1, 16]} />
             <meshStandardMaterial color="#8B4513" roughness={0.7} />
           </mesh>
-          <mesh position={[0, 0.07, 0]}>
-            <torusGeometry args={[0.06, 0.015, 8, 16]} />
+          {/* Mug handle */}
+          <mesh castShadow position={[0.07, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <torusGeometry args={[0.03, 0.012, 8, 12, Math.PI]} />
             <meshStandardMaterial color="#654321" roughness={0.8} />
           </mesh>
           {/* Coffee liquid */}
-          <mesh position={[0, 0.05, 0]}>
-            <cylinderGeometry args={[0.07, 0.06, 0.02, 16]} />
-            <meshStandardMaterial color="#4A3020" roughness={0.3} />
+          <mesh position={[0, 0.04, 0]} rotation={playerSipping ? [-0.5, 0, 0] : [0, 0, 0]}>
+            <cylinderGeometry args={[0.055, 0.045, 0.02, 16]} />
+            <meshStandardMaterial color="#3E2723" />
           </mesh>
-          {/* Sipping indicator */}
-          {playerSipping && (
-            <mesh position={[0, 0.15, 0]}>
-              <sphereGeometry args={[0.02, 8, 8]} />
-              <meshStandardMaterial color="#ffffff" transparent opacity={0.6} />
-            </mesh>
+          {/* Steam effect when not sipping */}
+          {!playerSipping && (
+            <group position={[0, 0.08, 0]}>
+              {[0, 0.03, 0.06].map((y, i) => (
+                <mesh key={i} position={[Math.sin(Date.now() * 0.002 + i) * 0.01, y, 0]}>
+                  <sphereGeometry args={[0.008, 4, 4]} />
+                  <meshStandardMaterial color="#ffffff" transparent opacity={0.3 - i * 0.1} />
+                </mesh>
+              ))}
+            </group>
           )}
         </group>
       )}
+      
       {/* Lighting */}
       <pointLight position={[0, ROOM_HEIGHT - 0.5, 0]} intensity={45} distance={14} decay={2} color="#FFF5E6" />
       <pointLight position={[-3, 2, 0]} intensity={15} distance={8} decay={2} color="#FFE4C4" />
@@ -481,7 +560,7 @@ export default function AboutRoom() {
       <ambientLight intensity={0.4} />
 
       {/* Exit door */}
-      <WoodenDoor position={[0, 1.75, ROOM_DEPTH / 2 - 0.1]} />
+      <WoodenDoor position={[0, 1.75, ROOM_DEPTH / 2 - 0.1]} rotation={[0, Math.PI, 0]} />
     </group>
   );
 }

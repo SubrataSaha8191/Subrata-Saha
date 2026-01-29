@@ -15,7 +15,6 @@ export default function PlayerController() {
   const playerPosition = useGameStore((s) => s.playerPosition);
   const setPlayerPosition = useGameStore((s) => s.setPlayerPosition);
   const setPlayerObject = useGameStore((s) => s.setPlayerObject);
-  const roomInteractionState = useGameStore((s) => s.roomInteractionState);
 
   // ✅ Call hooks separately (NO short-circuit)
   const w = useKeyPress("KeyW");
@@ -31,42 +30,58 @@ export default function PlayerController() {
   const shiftLeft = useKeyPress("ShiftLeft");
   const shiftRight = useKeyPress("ShiftRight");
 
-  const forward = w || up;
-  const back = s || down;
-  const moveLeft = a || left;
-  const moveRight = d || right;
-  const sprint = shiftLeft || shiftRight;
+  // Watch for room changes to re-sync position (teleport on enter)
+  const currentRoom = useGameStore((s) => s.currentRoom);
+  const isInRoom = useGameStore((s) => s.isInRoom);
 
-  // store player object once available
+  // Initialize player position from store and sync on room entry
   useEffect(() => {
     if (playerRef.current) {
       setPlayerObject(playerRef.current);
+      // Sync position on mount or room change
+      playerRef.current.position.set(...playerPosition);
+      // Reset velocity
+      useGameStore.getState().setVelocityY(0);
     }
-  }, [setPlayerObject]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setPlayerObject, currentRoom, isInRoom]); // Sync when room changes
 
   useFrame((_, delta) => {
     const player = playerRef.current;
     if (!player) return;
 
-    // Disable movement when sitting on sofa or interacting
-    const isLocked = roomInteractionState === "sitting_sofa" || 
-                     roomInteractionState === "holding_remote" || 
-                     roomInteractionState === "watching_tv" ||
-                     roomInteractionState === "sitting_chair" ||
-                     roomInteractionState === "using_computer";
-    
-    if (isLocked) {
-      // Don't process movement input but keep position synced
-      // The room components control the position when locked
-      return;
+    // Get fresh state every frame to ensure we have the latest values
+    const currentSittingState = useGameStore.getState().sittingState;
+    const currentRoomState = useGameStore.getState().roomInteractionState;
+
+    // When sitting, force lock player position - HIGHEST PRIORITY
+    if (currentSittingState.isSitting) {
+      const seatPos = currentSittingState.seatPosition;
+      player.position.x = seatPos[0];
+      player.position.y = seatPos[1];
+      player.position.z = seatPos[2];
+      setPlayerPosition(seatPos);
+      return; // Exit immediately - absolutely NO movement allowed
     }
 
-    const speed = MOVE_SPEED * (sprint ? SPRINT_MULTIPLIER : 1);
+    // When in any interaction state, also block movement
+    if (currentRoomState !== "none") {
+      return; // Exit early - do NOT process any movement
+    }
+
+    // Only process movement when completely unlocked
+    const isMovingForward = w || up;
+    const isMovingBack = s || down;
+    const isMovingLeft = a || left;
+    const isMovingRight = d || right;
+    const isSprinting = shiftLeft || shiftRight;
+    
+    const speed = MOVE_SPEED * (isSprinting ? SPRINT_MULTIPLIER : 1);
 
     const dir = new THREE.Vector3(
-      (moveRight ? 1 : 0) - (moveLeft ? 1 : 0),
+      (isMovingRight ? 1 : 0) - (isMovingLeft ? 1 : 0),
       0,
-      (back ? 1 : 0) - (forward ? 1 : 0)
+      (isMovingBack ? 1 : 0) - (isMovingForward ? 1 : 0)
     );
 
     if (dir.lengthSq() > 0) {
@@ -88,7 +103,7 @@ export default function PlayerController() {
   });
 
   return (
-    <mesh ref={playerRef} position={[0, 0.9, 10]} castShadow>
+    <mesh ref={playerRef} castShadow>
       <capsuleGeometry args={[0.5, 1.0, 6, 12]} />
       <meshStandardMaterial color="#f97316" />
     </mesh>

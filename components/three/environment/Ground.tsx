@@ -18,6 +18,9 @@ const MUD_COLOR = {
   b: 0.15,
 };
 
+// Path material color - consistent brown for all paths
+const PATH_COLOR = "#6B5344";
+
 // Check if a point is on a path (for grass exclusion)
 export function isOnPath(x: number, z: number): boolean {
   // Center area (fountain)
@@ -84,14 +87,14 @@ export default function RealisticGround() {
   }, []); // Dependency array
 
   // Create curved path meshes
-  const createCurvedPath = (endX: number, endZ: number, width: number = 3) => {
+  const createCurvedPath = (endX: number, endZ: number, width: number = 5) => {
     const curve = new THREE.QuadraticBezierCurve3(
-      new THREE.Vector3(0, 0.02, 0),
-      new THREE.Vector3(endX * 0.3 + (endX > 0 ? 5 : -5), 0.02, endZ * 0.5),
-      new THREE.Vector3(endX, 0.02, endZ)
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(endX * 0.4 + (endX > 0 ? 6 : -6), 0, endZ * 0.5),
+      new THREE.Vector3(endX * 0.85, 0, endZ * 0.85)
     );
 
-    const points = curve.getPoints(30);
+    const points = curve.getPoints(50);
     const pathGeometry = new THREE.BufferGeometry();
 
     // Create a tube-like path
@@ -111,8 +114,8 @@ export default function RealisticGround() {
       const px = -dz / len * width / 2;
       const pz = dx / len * width / 2;
 
-      vertices.push(point.x + px, 0.02, point.z + pz);
-      vertices.push(point.x - px, 0.02, point.z - pz);
+      vertices.push(point.x + px, 0, point.z + pz);
+      vertices.push(point.x - px, 0, point.z - pz);
 
       if (i < points.length - 1) {
         const idx = i * 2;
@@ -144,31 +147,32 @@ export default function RealisticGround() {
         />
       </mesh>
 
-      {/* Bridge path (straight from center to bridge) */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 12.5]} receiveShadow>
-        <planeGeometry args={[4, 15]} />
-        <meshStandardMaterial color="#6B5344" roughness={1} />
+      {/* Bridge path (straight from center to bridge) - extended to fountain */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 10]} receiveShadow>
+        <planeGeometry args={[5, 20]} />
+        <meshStandardMaterial color={PATH_COLOR} roughness={1} side={THREE.DoubleSide} />
       </mesh>
 
-      {/* Curved paths to each castle - MUD COLOR */}
+      {/* Curved paths to each castle - raised higher to cover green ground */}
       {CASTLE_POSITIONS.map((castle, i) => (
         <mesh
           key={i}
-          geometry={createCurvedPath(castle.x * 0.9, castle.z * 0.9, 3.5)}
+          geometry={createCurvedPath(castle.x, castle.z, 5)}
+          position={[0, 0.06, 0]}
           receiveShadow
         >
-          <meshStandardMaterial color="#6B5344" roughness={1} />
+          <meshStandardMaterial color={PATH_COLOR} roughness={1} side={THREE.DoubleSide} />
         </mesh>
       ))}
 
       {/* Center circular area around fountain */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]} receiveShadow>
         <circleGeometry args={[5, 32]} />
         <meshStandardMaterial color="#5C4A3D" roughness={1} />
       </mesh>
 
       {/* Decorative stone border around paths */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.045, 0]} receiveShadow>
         <ringGeometry args={[4.8, 5.2, 32]} />
         <meshStandardMaterial color="#696969" roughness={0.8} />
       </mesh>

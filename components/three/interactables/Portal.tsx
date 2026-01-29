@@ -56,7 +56,7 @@ export default function Portal({
       <PortalTrigger
         position={position}
         label={label}
-        onEnterReady={() => setCanEnter(true)}
+        onEnterReady={(ready) => setCanEnter(ready)}
       />
 
       {/* When player is outside, PortalTrigger will clear prompt but we also need canEnter false */}

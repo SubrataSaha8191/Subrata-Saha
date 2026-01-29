@@ -115,6 +115,25 @@ export default function RobloxCharacter() {
     const character = characterRef.current;
     if (!character) return;
 
+    // HARD lock while sitting: Skills chair/Projects sofa/About sofa.
+    // RobloxCharacter is the active movement controller, so we must stop movement here.
+    const { sittingState, roomInteractionState } = useGameStore.getState();
+    if (sittingState.isSitting) {
+      const [x, y, z] = sittingState.seatPosition;
+      character.position.set(x, y, z);
+      // Stop jump + vertical motion while sitting
+      if (isJumping) setIsJumping(false);
+      if (velocityY !== 0) setVelocityY(0);
+      setPlayerPosition([x, y, z]);
+      return;
+    }
+
+    // Extra safety: block movement during interaction states
+    if (roomInteractionState !== "none") {
+      setPlayerPosition([character.position.x, character.position.y, character.position.z]);
+      return;
+    }
+
     const speed = MOVE_SPEED * (sprint ? SPRINT_MULTIPLIER : 1);
     const time = state.clock.getElapsedTime();
 

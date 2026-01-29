@@ -5,8 +5,8 @@ import { useUIStore } from "@/store/useUIStore";
 // Contact information - update with your details
 const CONTACT_INFO = {
   name: "Subrata Saha",
-  email: "subrata@example.com", // Replace with your email
-  phone: "+91 XXXXXXXXXX", // Replace with your phone
+  email: "subratasaha8191@gmail.com", // Replace with your email
+  phone: "+91 8777780613", // Replace with your phone
   message: "Feel free to reach out!",
 };
 

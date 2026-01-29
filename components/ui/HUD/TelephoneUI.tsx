@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useGameStore } from "@/store/useGameStore";
 import { useUIStore } from "@/store/useUIStore";
 
@@ -7,18 +8,91 @@ export default function TelephoneUI() {
   const telephoneCode = useGameStore((s) => s.telephoneCode);
   const setTelephoneCode = useGameStore((s) => s.setTelephoneCode);
   const showTelephoneUI = useUIStore((s) => s.showTelephoneUI);
-
-  if (!showTelephoneUI) return null;
+  const setShowTelephoneUI = useUIStore((s) => s.setShowTelephoneUI);
+  const safeCode = telephoneCode.replace(/\D/g, "");
 
   const handleKeyPress = (key: string) => {
-    if (telephoneCode.length < 4) {
-      setTelephoneCode(telephoneCode + key);
-    }
+    // Read the latest code from the store (the setter expects a string, not an updater)
+    const current = useGameStore.getState().telephoneCode.replace(/\D/g, "");
+    setTelephoneCode(current.length < 4 ? current + key : current);
   };
 
   const handleClear = () => {
     setTelephoneCode("");
   };
+
+  // When telephone UI opens, ensure pointer lock is released so the cursor is available,
+  // and disable keyboard numeric input (clicks on the keypad only). Escape still closes the UI.
+  React.useEffect(() => {
+    if (!showTelephoneUI) return;
+
+    // Ensure the stored code is digits-only when the UI opens
+    const current = useGameStore.getState().telephoneCode;
+    const sanitized = current.replace(/\D/g, "");
+    if (sanitized !== current) setTelephoneCode(sanitized);
+
+    // Exit pointer lock if active
+    try {
+      if (document.pointerLockElement) document.exitPointerLock?.();
+    } catch (err) {
+      // ignore
+    }
+
+    // Ensure cursor visible
+    const oldCursor = document.body.style.cursor;
+    document.body.style.cursor = "auto";
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      const key = e.key;
+
+      // Escape always hangs up
+      if (key === "Escape") {
+        setShowTelephoneUI(false);
+        return;
+      }
+
+      // Digits 0-9 -> append if under 4 digits
+      if (/^[0-9]$/.test(key)) {
+        e.preventDefault();
+        const current = useGameStore.getState().telephoneCode.replace(/\D/g, "");
+        if (current.length < 4) setTelephoneCode(current + key);
+        return;
+      }
+
+      // Backspace -> delete last digit
+      if (key === "Backspace") {
+        e.preventDefault();
+        const current = useGameStore.getState().telephoneCode.replace(/\D/g, "");
+        setTelephoneCode(current.slice(0, -1));
+        return;
+      }
+
+      // 'C' or 'c' -> clear
+      if (key.toLowerCase() === "c") {
+        e.preventDefault();
+        setTelephoneCode("");
+        return;
+      }
+
+      // Enter -> close UI if a 4-digit code is entered
+      if (key === "Enter") {
+        e.preventDefault();
+        const current = useGameStore.getState().telephoneCode.replace(/\D/g, "");
+        if (current.length === 4) {
+          setShowTelephoneUI(false);
+        }
+        return;
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.cursor = oldCursor;
+    };
+  }, [showTelephoneUI, setShowTelephoneUI]);
+
+  if (!showTelephoneUI) return null;
 
   return (
     <div
@@ -36,6 +110,8 @@ export default function TelephoneUI() {
         pointerEvents: "auto",
       }}
     >
+
+
       {/* Header */}
       <div
         style={{
@@ -76,11 +152,11 @@ export default function TelephoneUI() {
               justifyContent: "center",
               fontSize: 28,
               fontWeight: 700,
-              color: telephoneCode[i] ? "#fff" : "#333",
+              color: safeCode[i] ? "#fff" : "#333",
               fontFamily: "monospace",
             }}
           >
-            {telephoneCode[i] || "•"}
+            {safeCode[i] || "•"}
           </div>
         ))}
       </div>
@@ -99,7 +175,7 @@ export default function TelephoneUI() {
             key={key}
             onClick={() => {
               if (key === "C") handleClear();
-              else if (key === "←") setTelephoneCode(telephoneCode.slice(0, -1));
+              else if (key === "←") setTelephoneCode(safeCode.slice(0, -1));
               else handleKeyPress(key);
             }}
             style={{

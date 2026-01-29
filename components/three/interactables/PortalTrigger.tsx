@@ -15,7 +15,8 @@ export default function PortalTrigger({
   position: [number, number, number];
   size?: [number, number, number];
   label: string;
-  onEnterReady: () => void;
+  // notify with true when inside and false when leaving
+  onEnterReady: (ready: boolean) => void;
 }) {
   const playerPos = useGameStore((s) => s.playerPosition);
   const setPrompt = useUIStore((s) => s.setInteractionPrompt);
@@ -28,15 +29,26 @@ export default function PortalTrigger({
     return b;
   }, [position, size]);
 
+  // Use getState to read current prompt without subscribing
+  const uiGetState = useUIStore.getState;
+
   useFrame(() => {
     const p = new THREE.Vector3(playerPos[0], playerPos[1], playerPos[2]);
     const inside = box.containsPoint(p);
 
     if (inside) {
       setPrompt(`Enter ${label}`);
-      onEnterReady();
+      onEnterReady(true);
     } else {
-      setPrompt(null);
+      // Only clear the prompt if it refers to this portal's label and mentions enter
+      const current = uiGetState().interactionPrompt;
+      const isOwnEnterPrompt =
+        current &&
+        current.toLowerCase().includes(label.toLowerCase()) &&
+        current.toLowerCase().includes("enter");
+
+      if (isOwnEnterPrompt) setPrompt(null);
+      onEnterReady(false);
     }
   });
 

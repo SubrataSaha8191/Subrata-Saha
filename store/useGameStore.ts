@@ -16,6 +16,13 @@ type RoomInteractionState =
   | "using_telephone"
   | "entering_code";
 
+// Sitting state for proper positioning
+type SittingState = {
+  isSitting: boolean;
+  seatPosition: [number, number, number];
+  lookDirection: [number, number, number]; // Direction to face when sitting
+};
+
 type GameState = {
   isLoading: boolean;
   playerPosition: [number, number, number];
@@ -40,9 +47,13 @@ type GameState = {
   roomInteractionState: RoomInteractionState;
   canControlCamera: boolean;
 
+  // Sitting state
+  sittingState: SittingState;
+
   // Projects room
   currentProjectIndex: number;
   isTVOn: boolean;
+  isHoldingRemote: boolean;
 
   // Contact room
   isGeneratorOn: boolean;
@@ -86,6 +97,15 @@ type GameState = {
   setDialogueIndex: (i: number) => void;
   setIsDialogueActive: (v: boolean) => void;
 
+  // Sitting state setters
+  setSittingState: (state: SittingState) => void;
+  // second param may be either a look direction or a door position (we treat as door position when provided)
+  sitDown: (seatPosition: [number, number, number], lookTarget?: [number, number, number]) => void;
+  standUp: () => void;
+
+  // Projects room additional
+  setIsHoldingRemote: (v: boolean) => void;
+
   // Helper to enter room
   enterRoom: (room: string) => void;
   exitRoom: () => void;
@@ -97,7 +117,7 @@ export const useGameStore = create<GameState>((set) => ({
   playerObject: null,
 
   // default Roblox camera
-  cameraYaw: Math.PI, // behind player
+  cameraYaw: Math.PI/180, // behind player
   cameraPitch: 0.35, // slight downward view
   cameraDistance: 10,
   cameraMode: "tpp",
@@ -115,9 +135,17 @@ export const useGameStore = create<GameState>((set) => ({
   roomInteractionState: "none",
   canControlCamera: true,
 
+  // Sitting state defaults
+  sittingState: {
+    isSitting: false,
+    seatPosition: [0, 0, 0],
+    lookDirection: [0, 0, 1],
+  },
+
   // Projects room defaults
   currentProjectIndex: 0,
   isTVOn: false,
+  isHoldingRemote: false,
 
   // Contact room defaults
   isGeneratorOn: false,
@@ -161,13 +189,57 @@ export const useGameStore = create<GameState>((set) => ({
   setDialogueIndex: (i) => set({ dialogueIndex: i }),
   setIsDialogueActive: (v) => set({ isDialogueActive: v }),
 
-  // Helper to enter room - forces FPP mode
+  // Sitting state setters
+  setSittingState: (state) => set({ sittingState: state }),
+  sitDown: (seatPosition, lookTarget) => set((state) => {
+    // If a look target is provided, compute a look direction towards it
+    let computedLook: [number, number, number] = [0, 0, -1];
+    if (lookTarget && lookTarget.length === 3) {
+      const tx = lookTarget[0];
+      const tz = lookTarget[2];
+      const vx = tx - seatPosition[0];
+      const vz = tz - seatPosition[2];
+      const len = Math.hypot(vx, vz) || 1;
+      computedLook = [vx / len, 0, vz / len];
+    }
+
+    return ({
+      sittingState: {
+        isSitting: true,
+        seatPosition,
+        lookDirection: computedLook,
+      },
+      playerPosition: seatPosition,
+      // Lock camera to face the computed look direction
+      // Camera lookDir formula: [-sin(yaw)*cos(pitch), -sin(pitch), -cos(yaw)*cos(pitch)]
+      // For direction [x, 0, z], we need: yaw = atan2(-x, -z)
+      cameraYaw: Math.atan2(-computedLook[0], -computedLook[2]),
+      cameraPitch: 0.1,
+    });
+  }),
+  standUp: () => set((state) => ({
+    sittingState: {
+      isSitting: false,
+      seatPosition: [0, 0, 0],
+      lookDirection: [0, 0, -1],
+    },
+    roomInteractionState: "none",
+  })),
+
+  // Projects room additional
+  setIsHoldingRemote: (v) => set({ isHoldingRemote: v }),
+
+  // Helper to enter room - forces FPP mode and resets position
   enterRoom: (room) => set({
     isInRoom: true,
     currentRoom: room,
     cameraMode: "fpp",
     cameraDistance: 0.5,
     canControlCamera: false,
+    // Spawn player just inside the door, facing into the room (towards -Z)
+    playerPosition: [0, 0.9, 5.5],
+    cameraYaw: 0, // Facing into the room (towards -Z direction)
+    cameraPitch: 0.1, // Slight downward view
   }),
 
   // Helper to exit room
@@ -177,9 +249,15 @@ export const useGameStore = create<GameState>((set) => ({
     roomInteractionState: "none",
     canControlCamera: true,
     isTVOn: false,
+    isHoldingRemote: false,
     telephoneCode: "",
     isCodeCorrect: false,
     dialogueIndex: 0,
     isDialogueActive: false,
+    sittingState: {
+      isSitting: false,
+      seatPosition: [0, 0, 0],
+      lookDirection: [0, 0, -1],
+    },
   }),
 }));

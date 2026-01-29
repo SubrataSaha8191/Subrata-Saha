@@ -3,6 +3,7 @@
 import { useRef, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { Html } from "@react-three/drei";
 import { useKeyPress } from "@/hooks/useKeyPress";
 import { useGameStore } from "@/store/useGameStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -10,15 +11,15 @@ import Portal from "../interactables/Portal";
 import { projects } from "@/data/projects";
 import { useRouter } from "next/navigation";
 
-// Room dimensions
-const ROOM_WIDTH = 12;
-const ROOM_DEPTH = 14;
-const ROOM_HEIGHT = 4;
+// Room dimensions - larger for big TV
+const ROOM_WIDTH = 16;
+const ROOM_DEPTH = 18;
+const ROOM_HEIGHT = 5;
 const WALL_COLOR = "#FFE4C4"; // Peach color
 const WALL_PATTERN_COLOR = "#FFD4A4";
 
 // Sofa component
-function Sofa({ position, rotation = [0, 9.5, 0] }: { position: [number, number, number]; rotation?: [number, number, number] }) {
+function Sofa({ position, rotation = [0, 9.43, 0] }: { position: [number, number, number]; rotation?: [number, number, number] }) {
   return (
     <group position={position} rotation={rotation}>
       {/* Sofa base/seat */}
@@ -58,7 +59,7 @@ function CoffeeTable({ position }: { position: [number, number, number] }) {
     <group position={position}>
       {/* Table top */}
       <mesh castShadow receiveShadow position={[0, 0.4, 0]}>
-        <boxGeometry args={[1.2, 0.08, 0.6]} />
+        <boxGeometry args={[1.6, 0.08, 0.6]} />
         <meshStandardMaterial color="#4a3728" roughness={0.7} />
       </mesh>
       {/* Table legs */}
@@ -77,52 +78,314 @@ function CoffeeTable({ position }: { position: [number, number, number] }) {
   );
 }
 
-// Remote Control component
+// Remote Control component - shown in hand when picked up
 function Remote({ position, isPickedUp }: { position: [number, number, number]; isPickedUp: boolean }) {
   if (isPickedUp) return null;
   
   return (
     <group position={position}>
       <mesh castShadow>
-        <boxGeometry args={[0.15, 0.03, 0.06]} />
+        <boxGeometry args={[0.18, 0.035, 0.08]} />
         <meshStandardMaterial color="#1a1a1a" roughness={0.5} />
       </mesh>
       {/* Buttons */}
-      {[[-0.03, 0.018, 0], [0.03, 0.018, 0]].map((pos, i) => (
+      {[[-0.04, 0.02, 0], [0.04, 0.02, 0]].map((pos, i) => (
         <mesh key={i} position={pos as [number, number, number]}>
-          <cylinderGeometry args={[0.01, 0.01, 0.01, 8]} />
-          <meshStandardMaterial color={i === 0 ? "#ff0000" : "#00ff00"} />
+          <cylinderGeometry args={[0.012, 0.012, 0.012, 8]} />
+          <meshStandardMaterial color={i === 0 ? "#ff0000" : "#00ff00"} emissive={i === 0 ? "#ff0000" : "#00ff00"} emissiveIntensity={0.3} />
+        </mesh>
+      ))}
+      {/* D-pad */}
+      <mesh position={[0, 0.02, 0.02]}>
+        <boxGeometry args={[0.03, 0.008, 0.03]} />
+        <meshStandardMaterial color="#333" />
+      </mesh>
+    </group>
+  );
+}
+
+// Remote in hand component
+function RemoteInHand() {
+  return (
+    <group>
+      <mesh castShadow>
+        <boxGeometry args={[0.12, 0.025, 0.05]} />
+        <meshStandardMaterial color="#1a1a1a" roughness={0.5} />
+      </mesh>
+      {/* Buttons */}
+      {[[-0.03, 0.015, 0], [0.03, 0.015, 0]].map((pos, i) => (
+        <mesh key={i} position={pos as [number, number, number]}>
+          <cylinderGeometry args={[0.008, 0.008, 0.008, 8]} />
+          <meshStandardMaterial color={i === 0 ? "#ff0000" : "#00ff00"} emissive={i === 0 ? "#ff0000" : "#00ff00"} emissiveIntensity={0.5} />
         </mesh>
       ))}
     </group>
   );
 }
 
-// TV component
+// HUGE 8K TV component with screen display
 function TV({ position, isOn, currentProject }: { position: [number, number, number]; isOn: boolean; currentProject: number }) {
   const project = projects[currentProject] || projects[0];
   
   return (
     <group position={position}>
-      {/* TV frame */}
+      {/* Massive TV frame - 8K size */}
       <mesh castShadow receiveShadow>
-        <boxGeometry args={[3, 1.8, 0.15]} />
-        <meshStandardMaterial color="#1a1a1a" roughness={0.3} />
+        <boxGeometry args={[10, 5.5, 0.2]} />
+        <meshStandardMaterial color="#0a0a0a" roughness={0.2} metalness={0.3} />
+      </mesh>
+      {/* TV screen bezel */}
+      <mesh position={[0, 0, 0.08]}>
+        <boxGeometry args={[9.6, 5.2, 0.05]} />
+        <meshStandardMaterial color="#1a1a1a" />
       </mesh>
       {/* TV screen */}
-      <mesh position={[0, 0, 0.08]}>
-        <planeGeometry args={[2.7, 1.5]} />
+      <mesh position={[0, 0, 0.12]}>
+        <planeGeometry args={[9.2, 5]} />
         <meshStandardMaterial 
-          color={isOn ? "#111111" : "#050505"} 
-          emissive={isOn ? "#222244" : "#000000"}
-          emissiveIntensity={isOn ? 0.3 : 0}
+          color={isOn ? "#111122" : "#050505"} 
+          emissive={isOn ? "#1a1a3a" : "#000000"}
+          emissiveIntensity={isOn ? 0.5 : 0}
         />
       </mesh>
-      {/* TV stand mount */}
-      <mesh castShadow position={[0, -1.1, 0.1]}>
-        <boxGeometry args={[0.3, 0.4, 0.1]} />
-        <meshStandardMaterial color="#2a2a2a" />
+      
+      {/* Project content displayed on TV when on */}
+      {isOn && (
+        <Html
+          position={[0, -0.6, 0.05]}
+          transform
+          sprite
+          distanceFactor={3.8}
+          style={{
+            width: '1050px',
+            height: '440px',
+            background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+            borderRadius: '0px',
+            padding: '28px',
+            overflow: 'auto',
+            boxShadow: 'inset 0 0 20px rgba(0,0,0,0.3)',
+            pointerEvents: 'auto',
+          }}
+        >
+          <div style={{ 
+            width: '100%', 
+            height: '100%', 
+            display: 'flex', 
+            flexDirection: 'column',
+            fontFamily: "'Segoe UI', system-ui, sans-serif",
+          }}>
+            {/* TV Header */}
+            <div style={{
+              background: 'linear-gradient(90deg, #1a1a2e 0%, #16213e 100%)',
+              padding: '16px 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: '2px solid #333',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '14px',
+                  height: '14px',
+                  borderRadius: '50%',
+                  background: '#00ff00',
+                  boxShadow: '0 0 12px #00ff00',
+                }} />
+                <span style={{ color: '#888', fontSize: '16px', fontWeight: 700, letterSpacing: '2px' }}>
+                  PROJECT SHOWCASE
+                </span>
+              </div>
+              <div style={{ color: '#666', fontSize: '14px', fontWeight: 600 }}>
+                {currentProject + 1} / {projects.length}
+              </div>
+            </div>
+
+            {/* Project Content */}
+            <div style={{ flex: 1, padding: '32px 40px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Title */}
+              <h1 style={{
+                fontSize: '36px',
+                fontWeight: 800,
+                color: '#fff',
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+              }}>
+                <span style={{
+                  width: '6px',
+                  height: '40px',
+                  background: 'linear-gradient(180deg, #7c3aed 0%, #a855f7 100%)',
+                  borderRadius: '3px',
+                }} />
+                {project.title}
+              </h1>
+
+              {/* Description */}
+              <p style={{
+                fontSize: '18px',
+                color: '#bbb',
+                lineHeight: 1.8,
+                margin: 0,
+                maxWidth: '700px',
+              }}>
+                {project.description}
+              </p>
+
+              {/* Tech Stack */}
+              <div>
+                <div style={{
+                  fontSize: '12px',
+                  color: '#666',
+                  marginBottom: '12px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '2px',
+                  fontWeight: 600,
+                }}>
+                  Technologies Used
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                  {project.techStack.map((tech, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        background: 'rgba(124, 58, 237, 0.25)',
+                        border: '2px solid rgba(124, 58, 237, 0.5)',
+                        color: '#a855f7',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {tech}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Links */}
+              <div style={{ display: 'flex', gap: '20px', marginTop: 'auto' }}>
+                {project.githubUrl && (
+                  <a
+                    href={project.githubUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '12px 20px',
+                      borderRadius: '8px',
+                      background: '#1a1a2e',
+                      border: '2px solid #333',
+                      color: '#fff',
+                      fontSize: '14px',
+                      textDecoration: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ⚡ GitHub
+                  </a>
+                )}
+                {project.liveUrl && (
+                  <a
+                    href={project.liveUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '12px 20px',
+                      borderRadius: '8px',
+                      background: 'linear-gradient(90deg, #7c3aed 0%, #a855f7 100%)',
+                      color: '#fff',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    🚀 Live Demo
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Bottom Controls */}
+            <div style={{
+              background: '#0a0a0a',
+              padding: '12px 24px',
+              borderTop: '2px solid #222',
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '32px',
+            }}>
+              <span style={{ color: '#555', fontSize: '13px' }}>
+                <span style={{ 
+                  padding: '4px 10px', 
+                  background: '#1a1a1a', 
+                  borderRadius: '6px', 
+                  marginRight: '8px',
+                  border: '1px solid #333'
+                }}>
+                  RIGHT CLICK
+                </span>
+                Next Project
+              </span>
+              <span style={{ color: '#555', fontSize: '13px' }}>
+                <span style={{ 
+                  padding: '4px 10px', 
+                  background: '#1a1a1a', 
+                  borderRadius: '6px', 
+                  marginRight: '8px',
+                  border: '1px solid #333'
+                }}>
+                  LEFT CLICK
+                </span>
+                Open Links
+              </span>
+              <span style={{ color: '#555', fontSize: '13px' }}>
+                <span style={{ 
+                  padding: '4px 10px', 
+                  background: '#1a1a1a', 
+                  borderRadius: '6px', 
+                  marginRight: '8px',
+                  border: '1px solid #333'
+                }}>
+                  ESC
+                </span>
+                Exit
+              </span>
+            </div>
+          </div>
+        </Html>
+      )}
+      
+      {/* TV stand/mount */}
+      <mesh castShadow position={[0, -3, 0.15]}>
+        <boxGeometry args={[0, 0, 0.15]} />
+        <meshStandardMaterial color="#2a2a2a" metalness={0.5} />
       </mesh>
+      {/* TV base */}
+      <mesh castShadow position={[0, -3.4, 0.3]}>
+        <boxGeometry args={[0, 0, 0.8]} />
+        <meshStandardMaterial color="#1a1a1a" metalness={0.5} />
+      </mesh>
+      {/* Ambient light strip on back */}
+      {isOn && (
+        <mesh position={[0, 0, -0.15]}>
+          <boxGeometry args={[9, 4.5, 0.02]} />
+          <meshStandardMaterial 
+            color="#7c3aed" 
+            emissive="#7c3aed" 
+            emissiveIntensity={0.8} 
+            transparent 
+            opacity={0.3}
+          />
+        </mesh>
+      )}
     </group>
   );
 }
@@ -185,16 +448,16 @@ function WoodenDoor({ position, rotation = [0, 0, 0] }: { position: [number, num
     <group position={position} rotation={rotation}>
       {/* Door frame */}
       <mesh castShadow receiveShadow position={[0, 0, 0]}>
-        <boxGeometry args={[2.2, 3.5, 0.15]} />
+        <boxGeometry args={[4, 7, 0.15]} />
         <meshStandardMaterial color="#3a2718" roughness={0.8} />
       </mesh>
       {/* Door panels */}
-      <mesh castShadow position={[0, 1.2, 0.08]}>
-        <boxGeometry args={[2, 1.4, 0.08]} />
+      <mesh castShadow position={[0, 1.9, 0.08]}>
+        <boxGeometry args={[2.5, 1.7, 0.08]} />
         <meshStandardMaterial color="#4a3728" roughness={0.7} />
       </mesh>
-      <mesh castShadow position={[0, -0.6, 0.08]}>
-        <boxGeometry args={[2, 1.4, 0.08]} />
+      <mesh castShadow position={[0, -0.4, 0.08]}>
+        <boxGeometry args={[2.5, 1.7, 0.08]} />
         <meshStandardMaterial color="#4a3728" roughness={0.7} />
       </mesh>
       {/* Door handle */}
@@ -203,7 +466,7 @@ function WoodenDoor({ position, rotation = [0, 0, 0] }: { position: [number, num
         <meshStandardMaterial color="#C0C0C0" metalness={0.9} roughness={0.3} />
       </mesh>
       {/* Vertical trim */}
-      <mesh castShadow position={[0, 0, 0.12]}>
+      <mesh castShadow position={[0, 0.76, 0.12]}>
         <boxGeometry args={[0.08, 3.3, 0.05]} />
         <meshStandardMaterial color="#3a2718" roughness={0.8} />
       </mesh>
@@ -212,6 +475,29 @@ function WoodenDoor({ position, rotation = [0, 0, 0] }: { position: [number, num
 }
 
 export default function ProjectsRoom() {
+
+  useFrame(() => {
+      // Wall collision/bounds
+      const player = useGameStore.getState().playerObject;
+      const sittingState = useGameStore.getState().sittingState;
+      
+      // Skip collision when sitting
+      if (sittingState.isSitting) return;
+      
+      if (player) {
+        const { x, z } = player.position;
+        const halfWidth = ROOM_WIDTH / 2 - 0.5;
+        const halfDepth = ROOM_DEPTH / 2 - 0.5;
+
+        if (Math.abs(x) > halfWidth) {
+          player.position.x = Math.sign(x) * halfWidth;
+        }
+        if (Math.abs(z) > halfDepth) {
+           player.position.z = Math.sign(z) * halfDepth;
+        }
+      }
+  });
+  
   const router = useRouter();
   const playerPos = useGameStore((s) => s.playerPosition);
   const setPlayerPosition = useGameStore((s) => s.setPlayerPosition);
@@ -221,6 +507,11 @@ export default function ProjectsRoom() {
   const setCurrentProjectIndex = useGameStore((s) => s.setCurrentProjectIndex);
   const isTVOn = useGameStore((s) => s.isTVOn);
   const setIsTVOn = useGameStore((s) => s.setIsTVOn);
+  const isHoldingRemote = useGameStore((s) => s.isHoldingRemote);
+  const setIsHoldingRemote = useGameStore((s) => s.setIsHoldingRemote);
+  const sittingState = useGameStore((s) => s.sittingState);
+  const sitDown = useGameStore((s) => s.sitDown);
+  const standUp = useGameStore((s) => s.standUp);
   const enterRoom = useGameStore((s) => s.enterRoom);
   
   const setPrompt = useUIStore((s) => s.setInteractionPrompt);
@@ -234,15 +525,15 @@ export default function ProjectsRoom() {
   // Enter room on mount
   useEffect(() => {
     enterRoom("projects");
-    // Spawn player inside room
-    setPlayerPosition([0, 0.9, 5]);
+    setPlayerPosition([0, 0.9, 6]);
   }, [enterRoom, setPlayerPosition]);
 
-  // Sofa position
-  const sofaPos: [number, number, number] = [0, 0, 3];
-  const tablePos: [number, number, number] = [0, 0, 1.5];
-  const remotePos: [number, number, number] = [0, 0.45, 1.5];
-  const tvPos: [number, number, number] = [0, 2, -ROOM_DEPTH / 2 + 0.2];
+  // Sofa position - adjusted for larger room
+  const sofaPos: [number, number, number] = [0, 0, 4];
+  const seatPosition: [number, number, number] = [0, 0.7, 4.3]; // Seated position on sofa
+  const tablePos: [number, number, number] = [0, 0, 2];
+  const remotePos: [number, number, number] = [0, 0.48, 2];
+  const tvPos: [number, number, number] = [0, 3.5, -ROOM_DEPTH / 2 + 0.5];
 
   // Check distances and handle interactions
   useFrame(() => {
@@ -253,23 +544,25 @@ export default function ProjectsRoom() {
     const distToSofa = playerVec.distanceTo(sofaVec);
     const distToTable = playerVec.distanceTo(tableVec);
 
-    // Handle E key press
     const justPressedE = pressE && !lastERef.current;
     lastERef.current = pressE;
 
-    // Handle ESC key press
     const justPressedEsc = pressEsc && !lastEscRef.current;
     lastEscRef.current = pressEsc;
 
-    // State machine for interactions
+    // Keep player locked when sitting
+    if (sittingState.isSitting) {
+      setPlayerPosition(sittingState.seatPosition);
+    }
+
     switch (roomInteractionState) {
       case "none":
-        if (distToSofa < 2.5) {
+        if (distToSofa < 3) {
           setPrompt("Press E to sit on sofa");
           if (justPressedE) {
             setRoomInteractionState("sitting_sofa");
-            // Lock player to sofa position with lower camera height
-            setPlayerPosition([sofaPos[0], 0.5, sofaPos[2] + 0.3]);
+            // Sit down facing the TV
+            sitDown(seatPosition, tvPos);
           }
         } else {
           setPrompt(null);
@@ -277,45 +570,34 @@ export default function ProjectsRoom() {
         break;
 
       case "sitting_sofa":
-        // Keep player locked to sofa
-        setPlayerPosition([sofaPos[0], 0.5, sofaPos[2] + 0.3]);
-        
-        if (!isTVOn) {
-          setPrompt("Look at remote on table - Press E to pick up remote");
+        if (!isHoldingRemote) {
+          setPrompt("Press E to pick up remote - Press ESC to leave");
           if (justPressedE) {
+            setIsHoldingRemote(true);
             setRoomInteractionState("holding_remote");
           }
-        } else {
-          setPrompt("Watching TV - Press ESC to stop watching");
         }
         if (justPressedEsc) {
-          if (isTVOn) {
-            setIsTVOn(false);
-          } else {
-            setRoomInteractionState("none");
-          }
+          standUp();
+          setIsHoldingRemote(false);
+          setIsTVOn(false);
         }
         break;
 
       case "holding_remote":
-        // Keep player locked to sofa
-        setPlayerPosition([sofaPos[0], 0.5, sofaPos[2] + 0.3]);
-        
-        setPrompt("Press E to turn on TV");
+        setPrompt("Press E to turn on TV - Press ESC to leave");
         if (justPressedE) {
           setIsTVOn(true);
           setRoomInteractionState("watching_tv");
         }
         if (justPressedEsc) {
+          setIsHoldingRemote(false);
           setRoomInteractionState("sitting_sofa");
         }
         break;
 
       case "watching_tv":
-        // Keep player locked to sofa
-        setPlayerPosition([sofaPos[0], 0.5, sofaPos[2] + 0.3]);
-        
-        setPrompt("Left click for next project - Press ESC to exit TV");
+        setPrompt("Right click for next project - Left click to open links - Press ESC to turn off TV");
         if (justPressedEsc) {
           setIsTVOn(false);
           setRoomInteractionState("holding_remote");
@@ -324,16 +606,17 @@ export default function ProjectsRoom() {
     }
   });
 
-  // Handle mouse click for next project
+  // Handle right click for next project (left click is reserved for link navigation)
   useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (e.button === 0 && roomInteractionState === "watching_tv" && isTVOn) {
+    const handleContextMenu = (e: MouseEvent) => {
+      if (roomInteractionState === "watching_tv" && isTVOn) {
+        e.preventDefault();
         setCurrentProjectIndex((currentProjectIndex + 1) % projects.length);
       }
     };
 
-    window.addEventListener("click", handleClick);
-    return () => window.removeEventListener("click", handleClick);
+    window.addEventListener("contextmenu", handleContextMenu);
+    return () => window.removeEventListener("contextmenu", handleContextMenu);
   }, [roomInteractionState, isTVOn, currentProjectIndex, setCurrentProjectIndex]);
 
   return (
@@ -344,29 +627,25 @@ export default function ProjectsRoom() {
         <meshStandardMaterial color="#8B7355" roughness={0.9} />
       </mesh>
 
-      {/* Ceiling */}
+      {/* Ceiling - higher for big TV */}
       <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, ROOM_HEIGHT, 0]}>
         <planeGeometry args={[ROOM_WIDTH, ROOM_DEPTH]} />
         <meshStandardMaterial color="#FFF8DC" />
       </mesh>
 
       {/* Walls */}
-      {/* Back wall (TV wall) */}
       <DecorativeWall 
         position={[0, ROOM_HEIGHT / 2, -ROOM_DEPTH / 2]} 
         size={[ROOM_WIDTH, ROOM_HEIGHT, 0.3]} 
       />
-      {/* Left wall */}
       <DecorativeWall 
         position={[-ROOM_WIDTH / 2, ROOM_HEIGHT / 2, 0]} 
         size={[0.3, ROOM_HEIGHT, ROOM_DEPTH]}
       />
-      {/* Right wall */}
       <DecorativeWall 
         position={[ROOM_WIDTH / 2, ROOM_HEIGHT / 2, 0]} 
         size={[0.3, ROOM_HEIGHT, ROOM_DEPTH]}
       />
-      {/* Front wall with door opening */}
       <mesh receiveShadow position={[-ROOM_WIDTH / 4 - 1, ROOM_HEIGHT / 2, ROOM_DEPTH / 2]}>
         <boxGeometry args={[ROOM_WIDTH / 2 - 2, ROOM_HEIGHT, 0.3]} />
         <meshStandardMaterial color={WALL_COLOR} roughness={0.9} />
@@ -375,7 +654,6 @@ export default function ProjectsRoom() {
         <boxGeometry args={[ROOM_WIDTH / 2 - 2, ROOM_HEIGHT, 0.3]} />
         <meshStandardMaterial color={WALL_COLOR} roughness={0.9} />
       </mesh>
-      {/* Above door */}
       <mesh receiveShadow position={[0, ROOM_HEIGHT - 0.5, ROOM_DEPTH / 2]}>
         <boxGeometry args={[2.5, 1, 0.3]} />
         <meshStandardMaterial color={WALL_COLOR} roughness={0.9} />
@@ -384,15 +662,24 @@ export default function ProjectsRoom() {
       {/* Furniture */}
       <Sofa position={sofaPos} />
       <CoffeeTable position={tablePos} />
-      <Remote position={remotePos} isPickedUp={roomInteractionState === "holding_remote" || roomInteractionState === "watching_tv"} />
+      <Remote position={remotePos} isPickedUp={isHoldingRemote} />
       <TV position={tvPos} isOn={isTVOn} currentProject={currentProjectIndex} />
 
-      {/* Lighting */}
-      <pointLight position={[0, ROOM_HEIGHT - 0.5, 0]} intensity={50} distance={15} decay={2} color="#FFF5E6" />
-      <ambientLight intensity={0.4} />
+      {/* Remote in hand when holding */}
+      {isHoldingRemote && (
+        <group position={[playerPos[0] + 0.25, playerPos[1] - 0.15, playerPos[2] - 0.3]}>
+          <RemoteInHand />
+        </group>
+      )}
+
+      {/* Lighting - brighter for big room */}
+      <pointLight position={[0, ROOM_HEIGHT - 0.5, 0]} intensity={70} distance={20} decay={2} color="#FFF5E6" />
+      <pointLight position={[-4, 3, 0]} intensity={25} distance={12} decay={2} color="#FFE4C4" />
+      <pointLight position={[4, 3, 0]} intensity={25} distance={12} decay={2} color="#FFE4C4" />
+      <ambientLight intensity={0.5} />
 
       {/* Exit door */}
-      <WoodenDoor position={[0, 1.75, ROOM_DEPTH / 2 - 0.1]} />
+      <WoodenDoor position={[0, 1.75, ROOM_DEPTH / 2 - 0.1]} rotation={[0, Math.PI, 0]} />
     </group>
   );
 }

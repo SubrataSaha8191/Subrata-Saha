@@ -143,7 +143,15 @@ export default function CastlePortal({
     } else {
       setCanEnter(false);
       setNearDoor(false);
-      setPrompt(null);
+      
+      // Only clear prompt if it was set by this portal (contains label and 'enter' or 'interact')
+      const current = useUIStore.getState().interactionPrompt;
+      const isOwnPrompt = current && 
+        current.toLowerCase().includes(label.toLowerCase()) && 
+        (current.toLowerCase().includes("enter") || current.toLowerCase().includes("interact"));
+        
+      if (isOwnPrompt) setPrompt(null);
+      
       if (doorOpen && distance > closeDistance) setDoorOpen(false);
     }
   });

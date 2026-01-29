@@ -32,7 +32,7 @@ export default function HUD() {
           case "holding_remote":
             return "E to turn on TV • ESC to put down remote";
           case "watching_tv":
-            return "Left Click for next project • ESC to turn off TV";
+            return "Right Click for next project • Left Click to open links • ESC to turn off TV";
           default:
             return "ESC to go back";
         }
@@ -57,7 +57,7 @@ export default function HUD() {
             return "E to pick up coffee • ESC to stand up";
           case "holding_coffee":
             return "Q to sip coffee • Click to continue dialogue • ESC to put down coffee";
-          case "in_dialogue":
+          case "talking_npc":
             return "Click to continue • ESC to skip dialogue";
           default:
             return "ESC to go back";
@@ -66,10 +66,9 @@ export default function HUD() {
       case "contact":
         switch (roomInteractionState) {
           case "none":
-            return "WASD to move • E to interact • ESC to exit room";
-          case "at_generator":
-            return "E to turn on generator • ESC to step back";
-          case "at_telephone":
+            return "WASD to move • E to interact (generator/telephone) • ESC to exit room";
+          case "using_telephone":
+          case "entering_code":
             return "Enter code on keypad • ESC to step back";
           default:
             return "ESC to go back";
@@ -130,13 +129,13 @@ export default function HUD() {
             left: 16,
             padding: "8px 16px",
             borderRadius: 8,
-            background: "rgba(124, 58, 237, 0.2)",
-            border: "1px solid rgba(124, 58, 237, 0.5)",
-            color: "#a855f7",
+            background: "rgba(0, 0, 0, 0.75)",
+            color: "#ffffff",
             fontSize: 12,
-            fontWeight: 600,
+            fontWeight: 700,
             textTransform: "uppercase",
             letterSpacing: 1,
+            backdropFilter: "blur(8px)",
           }}
         >
           {currentRoom} Room

@@ -1,200 +1,164 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useEffect, useRef } from "react";
 import { useGameStore } from "@/store/useGameStore";
 
-// Component that plays ambient sounds based on time of day
+// Component that plays ambient sounds based on time of day using audio files
 export default function AmbientSounds() {
-    const timeOfDay = useGameStore((s) => s.timeOfDay);
-    const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
+  const timeOfDay = useGameStore((s) => s.timeOfDay);
 
-    const dayGainRef = useRef<GainNode | null>(null);
-    const nightGainRef = useRef<GainNode | null>(null);
-    const birdNodesRef = useRef<OscillatorNode[]>([]);
-    const cricketNodesRef = useRef<OscillatorNode[]>([]);
-    const wolfTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const birdsAudioRef = useRef<HTMLAudioElement | null>(null);
+  const cricketsAudioRef = useRef<HTMLAudioElement | null>(null);
+  const wolfAudioRef = useRef<HTMLAudioElement | null>(null);
+  const wolfIntervalRef = useRef<number | null>(null);
+  const isInitializedRef = useRef(false);
+  const lastIsDayRef = useRef<boolean | null>(null);
 
-    // Determine if it's day or night
-    const isDay = timeOfDay >= 5 && timeOfDay < 19;
-    const isDawn = timeOfDay >= 5 && timeOfDay < 7;
-    const isDusk = timeOfDay >= 17 && timeOfDay < 19;
-    const isNight = timeOfDay < 5 || timeOfDay >= 19;
+  // Determine if it's day or night (day: 6am-7pm, night: 7pm-6am)
+  const isDay = timeOfDay >= 6 && timeOfDay < 19;
+  const isNight = !isDay;
 
-    // Initialize audio context on user interaction
-    useEffect(() => {
-        const initAudio = () => {
-            if (!audioContext) {
-                const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-                setAudioContext(ctx);
-            }
-            document.removeEventListener("click", initAudio);
-            document.removeEventListener("keydown", initAudio);
-        };
+  // Initialize audio elements
+  useEffect(() => {
+    // Create audio elements once
+    if (!birdsAudioRef.current) {
+      birdsAudioRef.current = new Audio("/audio/BirdsChirping.mp3");
+      birdsAudioRef.current.loop = true;
+      birdsAudioRef.current.volume = 0.3;
+    }
 
-        document.addEventListener("click", initAudio);
-        document.addEventListener("keydown", initAudio);
+    if (!cricketsAudioRef.current) {
+      cricketsAudioRef.current = new Audio("/audio/CricketsBuzzing.mp3");
+      cricketsAudioRef.current.loop = true;
+      cricketsAudioRef.current.volume = 0.25;
+    }
 
-        return () => {
-            document.removeEventListener("click", initAudio);
-            document.removeEventListener("keydown", initAudio);
-        };
-    }, [audioContext]);
+    if (!wolfAudioRef.current) {
+      wolfAudioRef.current = new Audio("/audio/WolfHowling.mp3");
+      wolfAudioRef.current.loop = false;
+      wolfAudioRef.current.volume = 0.3;
+    }
 
-    // Create bird chirping sounds for daytime
-    useEffect(() => {
-        if (!audioContext || !isDay) return;
+    // Start audio on first user interaction
+    const initAudio = () => {
+      if (isInitializedRef.current) return;
+      isInitializedRef.current = true;
 
-        const createBirdChirp = () => {
-            if (!audioContext || audioContext.state === "closed") return;
+      // Read the latest time from the store to avoid using a stale closure value
+      const currentTime = useGameStore.getState().timeOfDay;
+      const currentIsDay = currentTime >= 6 && currentTime < 19;
 
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            const filter = audioContext.createBiquadFilter();
+      // Record current day/night so the transition effect doesn't immediately re-trigger
+      lastIsDayRef.current = currentIsDay;
 
-            // Random bird frequencies (high pitched chirps)
-            const baseFreq = 1000 + Math.random() * 2000;
-            osc.frequency.setValueAtTime(baseFreq, audioContext.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(
-                baseFreq * (1 + Math.random() * 0.5),
-                audioContext.currentTime + 0.1
-            );
+      if (currentIsDay) {
+        // Daytime: play birds and ensure night sounds are stopped
+        birdsAudioRef.current?.play().catch(() => {});
+        cricketsAudioRef.current?.pause();
+        wolfAudioRef.current?.pause();
+        if (wolfIntervalRef.current) {
+          window.clearInterval(wolfIntervalRef.current);
+          wolfIntervalRef.current = null;
+        }
+      } else {
+        // Nighttime: start crickets and schedule wolf howls immediately and on interval
+        cricketsAudioRef.current?.play().catch(() => {});
+        birdsAudioRef.current?.pause();
 
-            osc.type = "sine";
-            filter.type = "highpass";
-            filter.frequency.value = 800;
+        // Play a wolf howl immediately
+        if (wolfAudioRef.current) {
+          wolfAudioRef.current.currentTime = 0;
+          wolfAudioRef.current.play().catch((err) => console.log("Wolf audio error:", err));
+        }
 
-            gain.gain.setValueAtTime(0, audioContext.currentTime);
-            gain.gain.linearRampToValueAtTime(0.03, audioContext.currentTime + 0.02);
-            gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.15);
+        // Clear any previous interval and then set a new one
+        if (wolfIntervalRef.current) {
+          window.clearInterval(wolfIntervalRef.current);
+          wolfIntervalRef.current = null;
+        }
 
-            osc.connect(filter);
-            filter.connect(gain);
-            gain.connect(audioContext.destination);
+        wolfIntervalRef.current = window.setInterval(() => {
+          if (wolfAudioRef.current) {
+            wolfAudioRef.current.currentTime = 0;
+            wolfAudioRef.current.play().catch((err) => console.log("Wolf audio error:", err));
+          }
+        }, 20000);
+      }
 
-            osc.start(audioContext.currentTime);
-            osc.stop(audioContext.currentTime + 0.2);
-        };
+      document.removeEventListener("click", initAudio);
+      document.removeEventListener("keydown", initAudio);
+    };
 
-        // Create random bird sounds
-        const birdInterval = setInterval(() => {
-            if (Math.random() < 0.3) {
-                createBirdChirp();
-                // Sometimes do a double chirp
-                if (Math.random() < 0.5) {
-                    setTimeout(createBirdChirp, 100);
-                }
-            }
-        }, 800);
+    document.addEventListener("click", initAudio);
+    document.addEventListener("keydown", initAudio);
 
-        return () => {
-            clearInterval(birdInterval);
-        };
-    }, [audioContext, isDay]);
+    return () => {
+      document.removeEventListener("click", initAudio);
+      document.removeEventListener("keydown", initAudio);
+    };
+  }, []);
 
-    // Create cricket/insect sounds for nighttime
-    useEffect(() => {
-        if (!audioContext || !isNight) return;
+  // Handle day/night transitions - use timeOfDay directly to ensure proper triggering
+  useEffect(() => {
+    if (!isInitializedRef.current) return;
 
-        const createCricket = () => {
-            if (!audioContext || audioContext.state === "closed") return;
+    const isDaytime = timeOfDay >= 6 && timeOfDay < 19;
 
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
+    // Only react when day/night changes to avoid frequent retriggers
+    if (lastIsDayRef.current === isDaytime) return;
+    lastIsDayRef.current = isDaytime;
 
-            // Cricket frequency (high pitched continuous chirp)
-            osc.frequency.value = 4000 + Math.random() * 1000;
-            osc.type = "square";
+    if (isDaytime) {
+      // Daytime: Play birds, stop crickets and wolf
+      birdsAudioRef.current?.play().catch(() => {});
+      cricketsAudioRef.current?.pause();
+      wolfAudioRef.current?.pause();
+      
+      // Clear wolf interval
+      if (wolfIntervalRef.current) {
+        window.clearInterval(wolfIntervalRef.current);
+        wolfIntervalRef.current = null;
+      }
+    } else {
+      // Nighttime: Play crickets, stop birds, schedule wolf howls
+      cricketsAudioRef.current?.play().catch(() => {});
+      birdsAudioRef.current?.pause();
 
-            gain.gain.setValueAtTime(0.01, audioContext.currentTime);
+      // Clear any existing wolf interval first
+      if (wolfIntervalRef.current) {
+        window.clearInterval(wolfIntervalRef.current);
+        wolfIntervalRef.current = null;
+      }
 
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
+      // Play wolf immediately when night starts
+      if (wolfAudioRef.current) {
+        wolfAudioRef.current.currentTime = 0;
+        wolfAudioRef.current.play().catch((err) => console.log("Wolf audio error:", err));
+      }
 
-            osc.start(audioContext.currentTime);
+      // Then play wolf every 20 seconds using window.setInterval
+      wolfIntervalRef.current = window.setInterval(() => {
+        if (wolfAudioRef.current) {
+          wolfAudioRef.current.currentTime = 0;
+          wolfAudioRef.current.play().catch((err) => console.log("Wolf audio error:", err));
+        }
+      }, 20000);
+    }
+    // Note: No cleanup here - we clear interval only when transitioning to day
+  }, [timeOfDay]);
 
-            // Modulate the cricket sound
-            const modulate = () => {
-                if (audioContext.state === "closed") return;
-                gain.gain.setValueAtTime(
-                    Math.random() < 0.5 ? 0.01 : 0,
-                    audioContext.currentTime
-                );
-            };
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      birdsAudioRef.current?.pause();
+      cricketsAudioRef.current?.pause();
+      wolfAudioRef.current?.pause();
+      
+      if (wolfIntervalRef.current) {
+        window.clearInterval(wolfIntervalRef.current);
+      }
+    };
+  }, []);
 
-            const modInterval = setInterval(modulate, 50);
-
-            setTimeout(() => {
-                clearInterval(modInterval);
-                osc.stop();
-            }, 2000 + Math.random() * 3000);
-        };
-
-        // Create wolf howl
-        const createWolfHowl = () => {
-            if (!audioContext || audioContext.state === "closed") return;
-
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            const filter = audioContext.createBiquadFilter();
-
-            // Wolf howl - low frequency with pitch variation
-            osc.type = "sawtooth";
-            osc.frequency.setValueAtTime(150, audioContext.currentTime);
-            osc.frequency.linearRampToValueAtTime(200, audioContext.currentTime + 0.5);
-            osc.frequency.linearRampToValueAtTime(180, audioContext.currentTime + 2);
-            osc.frequency.linearRampToValueAtTime(140, audioContext.currentTime + 3);
-
-            filter.type = "lowpass";
-            filter.frequency.value = 400;
-
-            gain.gain.setValueAtTime(0, audioContext.currentTime);
-            gain.gain.linearRampToValueAtTime(0.02, audioContext.currentTime + 0.3);
-            gain.gain.linearRampToValueAtTime(0.015, audioContext.currentTime + 2);
-            gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 3.5);
-
-            osc.connect(filter);
-            filter.connect(gain);
-            gain.connect(audioContext.destination);
-
-            osc.start(audioContext.currentTime);
-            osc.stop(audioContext.currentTime + 4);
-        };
-
-        // Start crickets
-        const cricketInterval = setInterval(() => {
-            if (Math.random() < 0.2) {
-                createCricket();
-            }
-        }, 1000);
-
-        // Occasional wolf howl
-        const scheduleWolf = () => {
-            const delay = 15000 + Math.random() * 30000; // 15-45 seconds
-            wolfTimeoutRef.current = setTimeout(() => {
-                createWolfHowl();
-                scheduleWolf();
-            }, delay);
-        };
-        scheduleWolf();
-
-        return () => {
-            clearInterval(cricketInterval);
-            if (wolfTimeoutRef.current) {
-                clearTimeout(wolfTimeoutRef.current);
-            }
-        };
-    }, [audioContext, isNight]);
-
-    // Cleanup
-    useEffect(() => {
-        return () => {
-            if (audioContext && audioContext.state !== "closed") {
-                audioContext.close();
-            }
-        };
-    }, [audioContext]);
-
-    return null; // This is an audio-only component
+  return null; // Audio-only component
 }
