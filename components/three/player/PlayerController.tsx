@@ -8,6 +8,9 @@ import { useGameStore } from "@/store/useGameStore";
 
 const MOVE_SPEED = 6;
 const SPRINT_MULTIPLIER = 1.6;
+const GRAVITY = 22;
+const JUMP_SPEED = 7.5;
+const GROUND_Y = 0.9;
 
 export default function PlayerController() {
   const playerRef = useRef<THREE.Mesh>(null);
@@ -29,6 +32,13 @@ export default function PlayerController() {
 
   const shiftLeft = useKeyPress("ShiftLeft");
   const shiftRight = useKeyPress("ShiftRight");
+  const space = useKeyPress("Space");
+
+  const isJumping = useGameStore((s) => s.isJumping);
+  const velocityY = useGameStore((s) => s.velocityY);
+  const setIsJumping = useGameStore((s) => s.setIsJumping);
+  const setVelocityY = useGameStore((s) => s.setVelocityY);
+  const lastSpaceRef = useRef(false);
 
   // Watch for room changes to re-sync position (teleport on enter)
   const currentRoom = useGameStore((s) => s.currentRoom);
@@ -67,6 +77,30 @@ export default function PlayerController() {
     // When in any interaction state, also block movement
     if (currentRoomState !== "none") {
       return; // Exit early - do NOT process any movement
+    }
+
+    // Jump + gravity (allow jumping while moving)
+    const justPressedSpace = space && !lastSpaceRef.current;
+    lastSpaceRef.current = space;
+
+    const grounded = player.position.y <= GROUND_Y + 0.001;
+    if (justPressedSpace && grounded && !isJumping) {
+      setVelocityY(JUMP_SPEED);
+      setIsJumping(true);
+    }
+
+    if (!grounded || velocityY !== 0) {
+      const nextVelocityY = velocityY - GRAVITY * delta;
+      const nextY = player.position.y + nextVelocityY * delta;
+
+      if (nextY <= GROUND_Y) {
+        player.position.y = GROUND_Y;
+        setVelocityY(0);
+        setIsJumping(false);
+      } else {
+        player.position.y = nextY;
+        setVelocityY(nextVelocityY);
+      }
     }
 
     // Only process movement when completely unlocked

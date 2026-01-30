@@ -10,6 +10,7 @@ import { useUIStore } from "@/store/useUIStore";
 import Portal from "../interactables/Portal";
 import { projects } from "@/data/projects";
 import { useRouter } from "next/navigation";
+import { FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 
 // Room dimensions - larger for big TV
 const ROOM_WIDTH = 16;
@@ -154,11 +155,10 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
         <Html
           position={[0, -0.6, 0.05]}
           transform
-          sprite
-          distanceFactor={3.8}
+          distanceFactor={2.8}
           style={{
-            width: '1050px',
-            height: '440px',
+            width: '1410px',
+            height: '580px',
             background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
             borderRadius: '0px',
             padding: '28px',
@@ -251,9 +251,9 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
                       style={{
                         padding: '8px 16px',
                         borderRadius: '8px',
-                        background: 'rgba(124, 58, 237, 0.25)',
-                        border: '2px solid rgba(124, 58, 237, 0.5)',
-                        color: '#a855f7',
+                        background: '#282c3d',
+                        border: '2px solid #282c3d',
+                        color: '#ffffff',
                         fontSize: '14px',
                         fontWeight: 600,
                       }}
@@ -277,7 +277,7 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
                       gap: '10px',
                       padding: '12px 20px',
                       borderRadius: '8px',
-                      background: '#1a1a2e',
+                      background: '#282c3d',
                       border: '2px solid #333',
                       color: '#fff',
                       fontSize: '14px',
@@ -285,7 +285,8 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
                       cursor: 'pointer',
                     }}
                   >
-                    ⚡ GitHub
+                    <FaGithub size={16} />
+                    GitHub
                   </a>
                 )}
                 {project.liveUrl && (
@@ -299,7 +300,7 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
                       gap: '10px',
                       padding: '12px 20px',
                       borderRadius: '8px',
-                      background: 'linear-gradient(90deg, #7c3aed 0%, #a855f7 100%)',
+                      background: 'linear-gradient(90deg, #4287f5 0%, #6d98de 100%)',
                       color: '#fff',
                       fontSize: '14px',
                       fontWeight: 600,
@@ -307,7 +308,8 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
                       cursor: 'pointer',
                     }}
                   >
-                    🚀 Live Demo
+                    <FaExternalLinkAlt size={14} />
+                    Live Demo
                   </a>
                 )}
               </div>
@@ -529,10 +531,10 @@ export default function ProjectsRoom() {
   }, [enterRoom, setPlayerPosition]);
 
   // Sofa position - adjusted for larger room
-  const sofaPos: [number, number, number] = [0, 0, 4];
-  const seatPosition: [number, number, number] = [0, 0.7, 4.3]; // Seated position on sofa
-  const tablePos: [number, number, number] = [0, 0, 2];
-  const remotePos: [number, number, number] = [0, 0.48, 2];
+  const sofaPos: [number, number, number] = [0, 0, -2];
+  const seatPosition: [number, number, number] = [0, 0.7, -1.7]; // Seated position on sofa
+  const tablePos: [number, number, number] = [0, 0, -4];
+  const remotePos: [number, number, number] = [0, 0.48, -4];
   const tvPos: [number, number, number] = [0, 3.5, -ROOM_DEPTH / 2 + 0.5];
 
   // Check distances and handle interactions

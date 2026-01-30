@@ -2,14 +2,18 @@
 
 import { Canvas } from "@react-three/fiber";
 import { Suspense } from "react";
+import { useGameStore } from "@/store/useGameStore";
 
 export default function CanvasRoot({ children }: { children: React.ReactNode }) {
+  const isLoading = useGameStore((s) => s.isLoading);
+
   return (
     <Canvas
-      shadows
+      shadows={!isLoading}
+      frameloop={isLoading ? "never" : "always"}
       camera={{ fov: 60, near: 0.1, far: 500, position: [0, 8, 30] }}
-      gl={{ antialias: true, powerPreference: "high-performance" }}
-      dpr={[1, 2]}
+      gl={{ antialias: !isLoading, powerPreference: isLoading ? "low-power" : "high-performance" }}
+      dpr={isLoading ? 1 : [1, 2]}
     >
       <Suspense fallback={null}>
         {/* Fog for atmosphere and depth */}

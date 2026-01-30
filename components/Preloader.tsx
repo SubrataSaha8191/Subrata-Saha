@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { gsap } from "gsap";
-import { SplitText as GSAPSplitText } from "gsap/SplitText";
-import { useGSAP } from "@gsap/react";
 import styled from "styled-components";
-
-gsap.registerPlugin(GSAPSplitText, useGSAP);
 
 interface PreloaderProps {
   onComplete?: () => void;
@@ -19,6 +14,7 @@ const Preloader: React.FC<PreloaderProps> = ({
 }) => {
   const [isVisible, setIsVisible] = useState(true);
   const [fontsLoaded, setFontsLoaded] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLHeadingElement>(null);
   const loaderRef = useRef<HTMLDivElement>(null);
@@ -38,66 +34,19 @@ const Preloader: React.FC<PreloaderProps> = ({
     });
   }, []);
 
-  useGSAP(
-    () => {
-      if (!textRef.current || !fontsLoaded) return;
-
-      const el = textRef.current;
-
-      // Create split text animation
-      const splitInstance = new GSAPSplitText(el, {
-        type: "chars",
-        charsClass: "split-char",
-      });
-
-      // Animate each character
-      gsap.fromTo(
-        splitInstance.chars,
-        {
-          opacity: 0,
-          y: 80,
-          rotateX: -90,
-          scale: 0.8,
-        },
-        {
-          opacity: 1,
-          y: 0,
-          rotateX: 0,
-          scale: 1,
-          duration: 1,
-          ease: "back.out(1.7)",
-          stagger: 0.08,
-        }
-      );
-
-      // Animate loader appearing
-      gsap.fromTo(
-        loaderRef.current,
-        { opacity: 0, scale: 0 },
-        { opacity: 1, scale: 1, duration: 0.5, delay: 1, ease: "back.out(2)" }
-      );
-
-      return () => {
-        splitInstance.revert();
-      };
-    },
-    { dependencies: [fontsLoaded], scope: containerRef }
-  );
+  useEffect(() => {
+    if (!textRef.current || !fontsLoaded) return;
+    // No JS-driven animation to keep preloader smooth
+  }, [fontsLoaded]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      // Fade out animation
-      if (containerRef.current) {
-        gsap.to(containerRef.current, {
-          opacity: 0,
-          duration: 0.8,
-          ease: "power2.inOut",
-          onComplete: () => {
-            setIsVisible(false);
-            onComplete?.();
-          },
-        });
-      }
+      setIsFadingOut(true);
+      const done = setTimeout(() => {
+        setIsVisible(false);
+        onComplete?.();
+      }, 800);
+      return () => clearTimeout(done);
     }, minDuration);
 
     return () => clearTimeout(timer);
@@ -106,7 +55,7 @@ const Preloader: React.FC<PreloaderProps> = ({
   if (!isVisible) return null;
 
   return (
-    <StyledWrapper ref={containerRef}>
+    <StyledWrapper ref={containerRef} data-fade-out={isFadingOut}>
       <div className="content">
         <h1 ref={textRef} className="title" style={{ visibility: fontsLoaded ? 'visible' : 'hidden' }}>
           SUBRATA SAHA
@@ -138,13 +87,18 @@ const StyledWrapper = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 9999;
+  opacity: 1;
+  transition: opacity 0.8s ease-in-out;
+
+  &[data-fade-out="true"] {
+    opacity: 0;
+  }
 
   .content {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 50px;
-    perspective: 1000px;
   }
 
   .title {
@@ -155,34 +109,15 @@ const StyledWrapper = styled.div`
     text-align: center;
     margin: 0;
     letter-spacing: 0.1em;
-    text-shadow: 
-      1px 1px 0 #666,
-      2px 2px 0 #666,
-      3px 3px 0 #666,
-      4px 4px 0 #666,
-      5px 5px 0 #666,
-      6px 6px 0 #666,
-      7px 7px 0 #666,
-      8px 8px 0 #666,
-      9px 9px 0 #666,
-      10px 10px 0 #666,
-      11px 11px 0 #666,
-      12px 12px 0 #666,
-      13px 13px 0 #666,
-      14px 14px 0 #666,
-      15px 15px 30px rgba(0, 0, 0, 0.6);
-    transform-style: preserve-3d;
-  }
-
-  .title .split-char {
-    display: inline-block;
-    transform-style: preserve-3d;
-    will-change: transform, opacity;
+    text-shadow: 2px 2px 12px rgba(0, 0, 0, 0.6);
+    animation: fadeInTitle 0.6s ease-out both;
   }
 
   .loader-container {
     display: flex;
     justify-content: center;
+    animation: popIn 0.4s ease-out both;
+    animation-delay: 0.2s;
   }
 
   .loader {
@@ -215,6 +150,28 @@ const StyledWrapper = styled.div`
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.5),
       0 0 20px rgba(255, 255, 255, 0.3);
     animation: jump7456 0.5s linear infinite;
+  }
+
+  @keyframes fadeInTitle {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes popIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   @keyframes jump7456 {

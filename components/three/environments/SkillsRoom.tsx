@@ -131,7 +131,19 @@ function CPU({ position, scale = 2.0 }: { position: [number, number, number]; sc
 }
 
 // Larger Monitor component with screen display
-function Monitor({ position, isOn, scale = 2.5 }: { position: [number, number, number]; isOn: boolean; scale?: number }) {
+function Monitor({
+  position,
+  isOn,
+  skillsPage,
+  totalSkillPages,
+  scale = 2.5,
+}: {
+  position: [number, number, number];
+  isOn: boolean;
+  skillsPage: number;
+  totalSkillPages: number;
+  scale?: number;
+}) {
   return (
     <group position={position} scale={scale}>
       {/* Screen bezel */}
@@ -153,20 +165,19 @@ function Monitor({ position, isOn, scale = 2.5 }: { position: [number, number, n
         <Html
           position={[0, 0, 0.03]}
           transform
-          sprite
-          distanceFactor={0.78}
+          distanceFactor={0.4}
           style={{
             width: '780px',
-            height: '480px',
+            height: '510px',
             background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
             borderRadius: '0px',
             padding: '28px',
-            overflow: 'auto',
+            overflow: 'hidden',
             boxShadow: 'inset 0 0 20px rgba(0,0,0,0.3)',
             pointerEvents: 'none',
           }}
         >
-          <div style={{ width: '100%', height: '100%' }}>
+          <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
             <div style={{ 
               fontSize: '20px', 
               fontWeight: 'bold', 
@@ -174,18 +185,24 @@ function Monitor({ position, isOn, scale = 2.5 }: { position: [number, number, n
               marginBottom: '20px',
               borderBottom: '2px solid #475569',
               paddingBottom: '12px',
-              fontFamily: 'system-ui, -apple-system, sans-serif'
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
             }}>
-              Technical Skills
+              <span>Technical Skills</span>
+              <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 600 }}>
+                {skillsPage + 1} / {totalSkillPages}
+              </span>
             </div>
             <div style={{ 
               display: 'grid', 
               gridTemplateColumns: 'repeat(3, 1fr)', 
               gap: '12px',
-              height: 'calc(100% - 60px)',
-              overflow: 'auto'
+              gridAutoRows: 'minmax(80px, 1fr)',
+              flex: 1
             }}>
-              {skills.map((skill, i) => (
+              {skills.slice(skillsPage * 9, skillsPage * 9 + 9).map((skill, i) => (
                 <div 
                   key={i}
                   style={{
@@ -404,6 +421,8 @@ export default function SkillsRoom() {
   const lastEscRef = useRef(false);
 
   const [isComputerOn, setIsComputerOn] = useState(false);
+  const [skillsPage, setSkillsPage] = useState(0);
+  const totalSkillPages = Math.max(1, Math.ceil(skills.length / 9));
 
   // Enter room on mount
   useEffect(() => {
@@ -458,6 +477,7 @@ export default function SkillsRoom() {
           setPrompt("Press E to use computer - Press ESC to stand up");
           if (justPressedE) {
             setIsComputerOn(true);
+            setSkillsPage(0);
             setRoomInteractionState("using_computer");
           }
         }
@@ -468,7 +488,7 @@ export default function SkillsRoom() {
         break;
 
       case "using_computer":
-        setPrompt("Viewing skills - Press ESC to stop");
+        setPrompt("Right click for next page - Press ESC to stop");
         if (justPressedEsc) {
           setIsComputerOn(false);
           setRoomInteractionState("sitting_chair");
@@ -476,6 +496,19 @@ export default function SkillsRoom() {
         break;
     }
   });
+
+  // Handle right click for next skills page
+  useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => {
+      if (roomInteractionState === "using_computer" && isComputerOn) {
+        e.preventDefault();
+        setSkillsPage((prev) => (prev + 1) % totalSkillPages);
+      }
+    };
+
+    window.addEventListener("contextmenu", handleContextMenu);
+    return () => window.removeEventListener("contextmenu", handleContextMenu);
+  }, [roomInteractionState, isComputerOn, totalSkillPages]);
 
   return (
     <group>
@@ -523,7 +556,12 @@ export default function SkillsRoom() {
       <Desk position={deskPos} />
       <OfficeChair position={chairPos} rotation={[0, Math.PI, 0]} />
       <CPU position={cpuPos} />
-      <Monitor position={monitorPos} isOn={isComputerOn} />
+      <Monitor
+        position={monitorPos}
+        isOn={isComputerOn}
+        skillsPage={skillsPage}
+        totalSkillPages={totalSkillPages}
+      />
       <Keyboard position={keyboardPos} />
       <Mouse position={mousePos} />
 

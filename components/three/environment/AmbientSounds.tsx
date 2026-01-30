@@ -24,7 +24,7 @@ export default function AmbientSounds() {
     if (!birdsAudioRef.current) {
       birdsAudioRef.current = new Audio("/audio/BirdsChirping.mp3");
       birdsAudioRef.current.loop = true;
-      birdsAudioRef.current.volume = 0.3;
+      birdsAudioRef.current.volume = 0.7;
     }
 
     if (!cricketsAudioRef.current) {

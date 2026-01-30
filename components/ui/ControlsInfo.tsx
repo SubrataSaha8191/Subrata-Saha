@@ -47,7 +47,7 @@ export default function ControlsInfo() {
                     <div className="mb-4 p-3 rounded-xl bg-linear-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30">
                         <span className="text-gray-400 text-sm">Current Mode:</span>
                         <span className="ml-2 text-white font-semibold">
-                            {cameraMode === "fpp" ? "🎯 First Person (FPP)" : "👁️ Third Person (TPP)"}
+                            {cameraMode === "fpp" ? "🎯 First Person (FPP)" : " 👁️ Third Person (TPP)"}
                         </span>
                     </div>
 

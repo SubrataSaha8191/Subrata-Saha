@@ -11,9 +11,26 @@ import HangingBridge from "../environment/HangingBridge";
 import CastlePortal from "../interactables/CastlePortal";
 import Flowers from "../environment/Flowers";
 import Butterflies from "../environment/Butterflies";
+import Fireflies from "../environment/Fireflies";
 import Rocks, { Pond } from "../environment/Rocks";
 import RealisticLighting from "../environment/Lighting";
 import AmbientSounds from "../environment/AmbientSounds";
+import { useGameStore } from "@/store/useGameStore";
+
+// Component to switch between butterflies (day) and fireflies (night)
+function DayNightCreatures() {
+  const timeOfDay = useGameStore((s) => s.timeOfDay);
+  
+  // Day time: 6am (6) to 6pm (18) = butterflies
+  // Night time: 6pm (18) to 6am (6) = fireflies
+  const isDayTime = timeOfDay >= 6 && timeOfDay < 18;
+  
+  if (isDayTime) {
+    return <Butterflies count={20} />;
+  } else {
+    return <Fireflies count={30} />;
+  }
+}
 
 // Animated Fire Torch component
 function FireTorch({ position }: { position: [number, number, number] }) {
@@ -360,8 +377,8 @@ export default function HubWorld() {
       {/* Flowers scattered around */}
       <Flowers count={150} area={70} />
 
-      {/* Butterflies flying around */}
-      <Butterflies count={20} />
+      {/* Butterflies during day (6am-6pm), Fireflies at night */}
+      <DayNightCreatures />
 
       {/* Rocks scattered around */}
       <Rocks count={50} area={70} />
@@ -375,14 +392,14 @@ export default function HubWorld() {
       {/* Castle Portals with realistic doors - scaled up */}
       <CastlePortal
         position={[-25, 0, -25]}
-        rotation={[0, Math.PI / 6, 0]}
+        rotation={[0, Math.PI / 4.6, 0]}
         label="Projects"
         href="/projects"
         castleColor="#4A5568"
         scale={1.5}
       />
       <CastlePortal
-        position={[25, 0, -25]}
+        position={[23, 0, -25]}
         rotation={[0, -Math.PI / 6, 0]}
         label="Skills"
         href="/skills"
@@ -390,8 +407,8 @@ export default function HubWorld() {
         scale={1.5}
       />
       <CastlePortal
-        position={[-28, 0, 10]}
-        rotation={[0, Math.PI / 1.5, 0]}
+        position={[-27, 0, 9]}
+        rotation={[0, Math.PI / 1.6, 0]}
         label="About"
         href="/about"
         castleColor="#2D3748"
