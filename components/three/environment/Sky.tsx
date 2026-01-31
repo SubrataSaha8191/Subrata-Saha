@@ -8,6 +8,7 @@ import { useGameStore } from "@/store/useGameStore";
 
 export default function FantasySky() {
   const cloudsRef = useRef<THREE.Group>(null);
+  const frameCount = useRef(0);
   const timeOfDay = useGameStore((s) => s.timeOfDay);
   const setTimeOfDay = useGameStore((s) => s.setTimeOfDay);
 
@@ -24,15 +25,19 @@ export default function FantasySky() {
     };
 
     updateTime(); // Initial set
-    const interval = setInterval(updateTime, 1000 * 10); // Update every 10 seconds
+    const interval = setInterval(updateTime, 1000 * 30); // Update every 30 seconds
 
     return () => clearInterval(interval);
   }, [setTimeOfDay]);
 
   useFrame((_, delta) => {
+    // Skip frames for cloud rotation
+    frameCount.current++;
+    if (frameCount.current % 3 !== 0) return;
+    
     // Slower cloud movement
     if (cloudsRef.current) {
-      cloudsRef.current.rotation.y += delta * 0.0005; // Was 0.002
+      cloudsRef.current.rotation.y += delta * 0.0005;
     }
   });
 

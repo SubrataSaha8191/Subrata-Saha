@@ -11,9 +11,10 @@ export default function CanvasRoot({ children }: { children: React.ReactNode }) 
     <Canvas
       shadows={!isLoading}
       frameloop={isLoading ? "never" : "always"}
-      camera={{ fov: 60, near: 0.1, far: 500, position: [0, 8, 30] }}
-      gl={{ antialias: !isLoading, powerPreference: isLoading ? "low-power" : "high-performance" }}
-      dpr={isLoading ? 1 : [1, 2]}
+      camera={{ fov: 60, near: 0.1, far: 300, position: [0, 8, 30] }}
+      gl={{ antialias: false, powerPreference: "high-performance", stencil: false, depth: true }}
+      dpr={1}
+      performance={{ min: 0.5 }}
     >
       <Suspense fallback={null}>
         {/* Fog for atmosphere and depth */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import SceneRoot from "@/components/three/SceneRoot";
 import HUD from "@/components/ui/HUD/HUD";
 import CharacterCustomizer from "@/components/ui/CharacterCustomizer";
@@ -9,8 +9,9 @@ import Preloader from "@/components/Preloader";
 import { useGameStore } from "@/store/useGameStore";
 
 export default function HomePage() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [showContent, setShowContent] = useState(false);
+  const hasLoadedOnce = useRef(false);
+  const [isLoading, setIsLoading] = useState(!hasLoadedOnce.current);
+  const [showContent, setShowContent] = useState(hasLoadedOnce.current);
   const setLoading = useGameStore((s) => s.setLoading);
 
   useEffect(() => {
@@ -45,6 +46,7 @@ export default function HomePage() {
       {isLoading && (
         <Preloader
           onComplete={() => {
+            hasLoadedOnce.current = true;
             setIsLoading(false);
             setLoading(false);
           }}

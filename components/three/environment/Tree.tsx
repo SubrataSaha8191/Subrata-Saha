@@ -19,16 +19,6 @@ export default function Tree({
 }: TreeProps) {
   const groupRef = useRef<THREE.Group>(null);
   const leavesRef = useRef<THREE.Mesh>(null);
-  const phase = useMemo(() => Math.random() * Math.PI * 2, []);
-
-  useFrame(({ clock }) => {
-    if (leavesRef.current) {
-      const time = clock.getElapsedTime();
-      // Gentle swaying
-      leavesRef.current.rotation.z = Math.sin(time * 0.5 + phase) * 0.02;
-      leavesRef.current.rotation.x = Math.cos(time * 0.3 + phase) * 0.015;
-    }
-  });
 
   return (
     <group ref={groupRef} position={position} scale={scale}>

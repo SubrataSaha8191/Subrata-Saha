@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { isOnPath } from "./Ground";
 
-const GRASS_COUNT = 15000;
+const GRASS_COUNT = 4000;
 const GRASS_AREA = 80;
 const GRASS_HEIGHT_MIN = 0.08; // Shorter grass
 const GRASS_HEIGHT_MAX = 0.15;
@@ -13,6 +13,7 @@ const GRASS_HEIGHT_MAX = 0.15;
 export default function AnimatedGrass() {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
+  const frameCount = useRef(0);
 
   // Pre-calculate grass positions and properties
   const grassData = useMemo(() => {
@@ -65,7 +66,26 @@ export default function AnimatedGrass() {
     return data;
   }, []);
 
+  // Initialize grass positions on mount
+  useEffect(() => {
+    if (!meshRef.current) return;
+
+    grassData.forEach((grass, i) => {
+      dummy.position.set(grass.x, grass.scale, grass.z);
+      dummy.rotation.set(0, grass.rotationY, 0);
+      dummy.scale.set(0.08, grass.scale, 0.08);
+      dummy.updateMatrix();
+      meshRef.current!.setMatrixAt(i, dummy.matrix);
+    });
+
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  }, [grassData, dummy]);
+
   useFrame(({ clock }) => {
+    // Skip frames to reduce CPU usage
+    frameCount.current++;
+    if (frameCount.current % 2 !== 0) return;
+    
     if (!meshRef.current) return;
     const time = clock.getElapsedTime();
 

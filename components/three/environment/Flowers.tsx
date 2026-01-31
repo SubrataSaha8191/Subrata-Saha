@@ -10,17 +10,8 @@ interface FlowerProps {
 }
 
 function Flower({ position, color = "#FF69B4" }: FlowerProps) {
-  const flowerRef = useRef<THREE.Group>(null);
-
-  useFrame(({ clock }) => {
-    if (flowerRef.current) {
-      const time = clock.getElapsedTime();
-      flowerRef.current.rotation.z = Math.sin(time + position[0]) * 0.05;
-    }
-  });
-
   return (
-    <group ref={flowerRef} position={position}>
+    <group position={position}>
       {/* Stem */}
       <mesh>
         <cylinderGeometry args={[0.02, 0.03, 0.4, 6]} />

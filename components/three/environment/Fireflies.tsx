@@ -6,6 +6,7 @@ import * as THREE from "three";
 
 export default function Fireflies({ count = 25 }: { count?: number }) {
   const groupRef = useRef<THREE.Group>(null);
+  const frameCount = useRef(0);
 
   const fireflies = useMemo(() => {
     return Array.from({ length: count }, (_, i) => ({
@@ -26,6 +27,10 @@ export default function Fireflies({ count = 25 }: { count?: number }) {
   }, [count]);
 
   useFrame(({ clock }) => {
+    // Skip frames to reduce CPU usage
+    frameCount.current++;
+    if (frameCount.current % 2 !== 0) return;
+    
     if (!groupRef.current) return;
     const time = clock.getElapsedTime();
 
@@ -41,16 +46,11 @@ export default function Fireflies({ count = 25 }: { count?: number }) {
       // Blinking glow effect
       const blink = (Math.sin(time * data.blinkSpeed + data.blinkOffset) + 1) / 2;
       const glowMesh = firefly.children[0] as THREE.Mesh;
-      const light = firefly.children[1] as THREE.PointLight;
       
       if (glowMesh && glowMesh.material) {
         const mat = glowMesh.material as THREE.MeshStandardMaterial;
         mat.emissiveIntensity = 1 + blink * 3;
         mat.opacity = 0.6 + blink * 0.4;
-      }
-      
-      if (light) {
-        light.intensity = 0.5 + blink * 2;
       }
     });
   });
@@ -61,7 +61,7 @@ export default function Fireflies({ count = 25 }: { count?: number }) {
         <group key={i} position={f.startPos}>
           {/* Glowing body */}
           <mesh>
-            <sphereGeometry args={[0.06, 8, 8]} />
+            <sphereGeometry args={[0.06, 6, 6]} />
             <meshStandardMaterial
               color={f.glowColor}
               emissive={f.glowColor}
@@ -70,13 +70,6 @@ export default function Fireflies({ count = 25 }: { count?: number }) {
               opacity={0.9}
             />
           </mesh>
-          {/* Point light for glow effect */}
-          <pointLight
-            color={f.glowColor}
-            intensity={1.5}
-            distance={4}
-            decay={2}
-          />
         </group>
       ))}
     </group>

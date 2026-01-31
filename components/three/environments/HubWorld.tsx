@@ -26,9 +26,9 @@ function DayNightCreatures() {
   const isDayTime = timeOfDay >= 6 && timeOfDay < 18;
   
   if (isDayTime) {
-    return <Butterflies count={20} />;
+    return <Butterflies count={10} />;
   } else {
-    return <Fireflies count={30} />;
+    return <Fireflies count={15} />;
   }
 }
 
@@ -347,7 +347,7 @@ function DragonStatue() {
       {/* Base pedestal */}
       <mesh castShadow receiveShadow position={[0, -0.1, 0]}>
         <cylinderGeometry args={[0.8, 1, 0.3, 8]} />
-        <meshStandardMaterial color="#fc032csa" metalness={0.7} roughness={0.3} />
+        <meshStandardMaterial color="#fc032c" metalness={0.7} roughness={0.3} />
       </mesh>
     </group>
   );
@@ -372,16 +372,16 @@ export default function HubWorld() {
       <AnimatedGrass />
 
       {/* Forest of trees */}
-      <Forest count={50} area={80} avoidCenter={18} />
+      <Forest count={15} area={80} avoidCenter={18} />
 
       {/* Flowers scattered around */}
-      <Flowers count={150} area={70} />
+      <Flowers count={30} area={70} />
 
       {/* Butterflies during day (6am-6pm), Fireflies at night */}
       <DayNightCreatures />
 
       {/* Rocks scattered around */}
-      <Rocks count={50} area={70} />
+      <Rocks count={12} area={70} />
 
       {/* Water pond */}
       <Pond position={[15, 0, 10]} />

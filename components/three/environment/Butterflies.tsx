@@ -6,6 +6,7 @@ import * as THREE from "three";
 
 export default function Butterflies({ count = 15 }: { count?: number }) {
   const groupRef = useRef<THREE.Group>(null);
+  const frameCount = useRef(0);
 
   const butterflies = useMemo(() => {
     return Array.from({ length: count }, (_, i) => ({
@@ -24,6 +25,10 @@ export default function Butterflies({ count = 15 }: { count?: number }) {
   }, [count]);
 
   useFrame(({ clock }) => {
+    // Skip frames to reduce CPU usage
+    frameCount.current++;
+    if (frameCount.current % 2 !== 0) return;
+    
     if (!groupRef.current) return;
     const time = clock.getElapsedTime();
 
