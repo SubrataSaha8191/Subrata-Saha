@@ -126,10 +126,10 @@ export default function MobileJoystick() {
       
       {/* Direction indicators */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="absolute top-2 text-white/30 text-xs font-bold">W</div>
-        <div className="absolute bottom-2 text-white/30 text-xs font-bold">S</div>
-        <div className="absolute left-2 text-white/30 text-xs font-bold">A</div>
-        <div className="absolute right-2 text-white/30 text-xs font-bold">D</div>
+        <div className="absolute top-2 text-white/30 text-base font-bold">▲</div>
+        <div className="absolute bottom-2 text-white/30 text-base font-bold">▼</div>
+        <div className="absolute left-2 text-white/30 text-base font-bold">◄</div>
+        <div className="absolute right-2 text-white/30 text-base font-bold">►</div>
       </div>
       
       {/* Knob */}
