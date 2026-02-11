@@ -6,6 +6,7 @@ import * as THREE from "three";
 import { useKeyPress } from "@/hooks/useKeyPress";
 import { useGameStore } from "@/store/useGameStore";
 import { useCharacterStore, CharacterOutfit } from "@/store/useCharacterStore";
+import { useMobileControlsStore } from "@/store/useMobileControlsStore";
 
 const MOVE_SPEED = 6;
 const SPRINT_MULTIPLIER = 1.6;
@@ -96,13 +97,20 @@ export default function RobloxCharacter() {
   const shiftRight = useKeyPress("ShiftRight");
   const space = useKeyPress("Space");
 
+  // Mobile inputs
+  const joystickX = useMobileControlsStore((s) => s.joystickX);
+  const joystickY = useMobileControlsStore((s) => s.joystickY);
+  const mobileJump = useMobileControlsStore((s) => s.isJumpPressed);
+  const mobileSprint = useMobileControlsStore((s) => s.isSprintActive);
+
   const forward = w || up;
   const back = s || down;
   const moveLeft = a || left;
   const moveRight = d || right;
-  const sprint = shiftLeft || shiftRight;
+  const sprint = shiftLeft || shiftRight || mobileSprint;
 
-  const isMoving = forward || back || moveLeft || moveRight;
+  const joystickActive = Math.abs(joystickX) > 0.1 || Math.abs(joystickY) > 0.1;
+  const isMoving = forward || back || moveLeft || moveRight || joystickActive;
   const wasSpacePressed = useRef(false);
 
   useEffect(() => {
@@ -138,11 +146,12 @@ export default function RobloxCharacter() {
     const time = state.clock.getElapsedTime();
 
     // Handle jump - only when stationary
-    if (space && !wasSpacePressed.current && !isJumping && !isMoving) {
+    const jumpPressed = space || mobileJump;
+    if (jumpPressed && !wasSpacePressed.current && !isJumping && !isMoving) {
       setVelocityY(JUMP_FORCE);
       setIsJumping(true);
     }
-    wasSpacePressed.current = space;
+    wasSpacePressed.current = jumpPressed;
 
     // Apply gravity and update position
     if (isJumping || character.position.y > GROUND_LEVEL) {
@@ -159,8 +168,14 @@ export default function RobloxCharacter() {
     }
 
     // Calculate input direction in local space
-    const inputX = (moveRight ? 1 : 0) - (moveLeft ? 1 : 0);
-    const inputZ = (back ? 1 : 0) - (forward ? 1 : 0);
+    let inputX = (moveRight ? 1 : 0) - (moveLeft ? 1 : 0);
+    let inputZ = (back ? 1 : 0) - (forward ? 1 : 0);
+
+    // Use analog joystick when active
+    if (joystickActive) {
+      inputX = joystickX;
+      inputZ = -joystickY;
+    }
 
     // Only allow movement if NOT jumping
     if (!isJumping && (inputX !== 0 || inputZ !== 0)) {

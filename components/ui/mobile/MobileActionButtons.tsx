@@ -64,7 +64,7 @@ export default function MobileActionButtons() {
   if (!isMobile) return null;
 
   return (
-    <div className="fixed right-6 bottom-24 z-50 flex flex-col-reverse gap-4 touch-none select-none">
+    <div className="fixed right-6 bottom-36 z-50 flex flex-col-reverse gap-4 touch-none select-none">
       {/* Jump Button - bottom */}
       {showJump && (
         <button
