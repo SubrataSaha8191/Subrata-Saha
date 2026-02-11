@@ -4,7 +4,7 @@ import React, { useRef, useEffect, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useMobileAwareKeyPress } from "@/hooks/useMobileAwareKeyPress";
-import { useKeyPress } from "@/hooks/useKeyPress";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { useGameStore } from "@/store/useGameStore";
 import { useUIStore } from "@/store/useUIStore";
 import Portal from "../interactables/Portal";
@@ -181,6 +181,7 @@ function NPCCharacter({ position, isSipping }: { position: [number, number, numb
 function WoodenDoor({ position, rotation = [0, 0, 0] }: { position: [number, number, number]; rotation?: [number, number, number] }) {
   const router = useRouter();
   const playerPos = useGameStore((s) => s.playerPosition);
+  const isMobile = useIsMobile();
   const setPrompt = useUIStore((s) => s.setInteractionPrompt);
   const setIsNearExitDoor = useUIStore((s) => s.setIsNearExitDoor);
   const exitRoom = useGameStore((s) => s.exitRoom);
@@ -296,7 +297,7 @@ export default function AboutRoom() {
   const setDialogueSpeaker = useUIStore((s) => s.setDialogueSpeaker);
   
   const pressE = useMobileAwareKeyPress("KeyE");
-  const pressQ = useKeyPress("KeyQ");
+  const pressQ = useMobileAwareKeyPress("KeyQ");
   const pressEsc = useMobileAwareKeyPress("Escape");
   const lastERef = useRef(false);
   const lastQRef = useRef(false);
@@ -451,7 +452,7 @@ export default function AboutRoom() {
     switch (roomInteractionState) {
       case "none":
         if (distToSofa < 2.5) {
-          setPrompt("Press E to sit on sofa");
+          setPrompt(isMobile ? "Tap E to sit on sofa" : "Press E to sit on sofa");
           if (justPressedE) {
             setRoomInteractionState("talking_npc");
             setIsDialogueActive(true);
@@ -466,7 +467,11 @@ export default function AboutRoom() {
 
       case "talking_npc":
         if (!playerHoldingCoffee) {
-          setPrompt("Press E to pick up coffee - Press ESC to leave");
+          setPrompt(
+            isMobile
+              ? "Tap E to pick up coffee - Tap ✕ to leave"
+              : "Press E to pick up coffee - Press ESC to leave"
+          );
           if (justPressedE) {
             setPlayerHoldingCoffee(true);
             setRoomInteractionState("holding_coffee");
@@ -480,7 +485,11 @@ export default function AboutRoom() {
         break;
 
       case "holding_coffee":
-        setPrompt("Press Q to sip coffee - Press ESC to leave");
+        setPrompt(
+          isMobile
+            ? "Tap Sip to sip coffee - Tap ✕ to leave"
+            : "Press Q to sip coffee - Press ESC to leave"
+        );
         if (justPressedQ && !playerSipping) {
           setPlayerSipping(true);
           // play the sip sound (file first, fallback to WebAudio synth)

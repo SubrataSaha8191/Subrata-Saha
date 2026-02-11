@@ -41,7 +41,7 @@ export default function HUD() {
           case "holding_remote":
             return "E to turn on TV • ✕ to put down";
           case "watching_tv":
-            return "Tap screen for next • ✕ to stop";
+            return "Tap arrows for next • Tap links to open • ✕ to stop";
           default:
             return "✕ to go back";
         }
@@ -53,7 +53,7 @@ export default function HUD() {
           case "sitting_chair":
             return "E to use computer • ✕ to stand up";
           case "using_computer":
-            return "✕ to stop using computer";
+            return "Tap Next for next page • ✕ to stop";
           default:
             return "✕ to go back";
         }
@@ -65,7 +65,7 @@ export default function HUD() {
           case "sitting_sofa":
             return "E to pick up coffee • ✕ to stand up";
           case "holding_coffee":
-            return "Tap to continue • ✕ to put down";
+            return "Sip to sip coffee • Tap to continue • ✕ to put down";
           case "talking_npc":
             return "Tap to continue • ✕ to skip";
           default:
@@ -156,6 +156,7 @@ export default function HUD() {
         position: "absolute",
         inset: 0,
         pointerEvents: "none",
+        zIndex: 5000,
       }}
     >
       <Crosshair />
@@ -183,6 +184,7 @@ export default function HUD() {
           backdropFilter: "blur(10px)",
           pointerEvents: "auto",
           maxWidth: "calc(100vw - 32px)",
+          zIndex: 6000,
         }}
       >
         <div style={{ fontWeight: 700, fontSize: 14 }}>Controls</div>
@@ -207,6 +209,7 @@ export default function HUD() {
             textTransform: "uppercase",
             letterSpacing: 1,
             backdropFilter: "blur(8px)",
+            zIndex: 6000,
           }}
         >
           {currentRoom} Room

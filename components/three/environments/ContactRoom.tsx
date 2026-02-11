@@ -5,6 +5,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
 import { useMobileAwareKeyPress } from "@/hooks/useMobileAwareKeyPress";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { useGameStore } from "@/store/useGameStore";
 import { useUIStore } from "@/store/useUIStore";
 import Portal from "../interactables/Portal";
@@ -334,6 +335,7 @@ export default function ContactRoom() {
   const isCodeCorrect = useGameStore((s) => s.isCodeCorrect);
   const setIsCodeCorrect = useGameStore((s) => s.setIsCodeCorrect);
   const enterRoom = useGameStore((s) => s.enterRoom);
+  const isMobile = useIsMobile();
   
   const setPrompt = useUIStore((s) => s.setInteractionPrompt);
   const setNotification = useUIStore((s) => s.setNotification);
@@ -385,7 +387,7 @@ export default function ContactRoom() {
       case "none":
         // Check generator first
         if (distToGenerator < 2 && !isGeneratorOn) {
-          setPrompt("Press E to interact");
+          setPrompt(isMobile ? "Tap E to interact" : "Press E to interact");
           if (justPressedE) {
             setIsGeneratorOn(true);
             setNotification("Generator is now running!");
@@ -393,19 +395,19 @@ export default function ContactRoom() {
           }
         } else if (distToTelephone < 2) {
           if (!isGeneratorOn) {
-            setPrompt("Press E to use telephone");
+            setPrompt(isMobile ? "Tap E to use telephone" : "Press E to use telephone");
             if (justPressedE) {
               setNotification("No power! The telephone won't work without electricity...");
               setTimeout(() => setNotification(null), 3000);
             }
           } else if (!isCodeCorrect) {
-            setPrompt("Press E to use telephone");
+            setPrompt(isMobile ? "Tap E to use telephone" : "Press E to use telephone");
             if (justPressedE) {
               setRoomInteractionState("using_telephone");
               setShowTelephoneUI(true);
             }
           } else {
-            setPrompt("Press E to view contact info");
+            setPrompt(isMobile ? "Tap E to view contact info" : "Press E to view contact info");
             if (justPressedE) {
               setShowContactCard(true);
               setRoomInteractionState("using_telephone");

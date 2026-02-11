@@ -130,22 +130,28 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
   const isMobile = useIsMobile();
   const setCurrentProjectIndex = useGameStore((s) => s.setCurrentProjectIndex);
   const project = projects[currentProject] || projects[0];
+  const tvWidth = isMobile ? 6.2 : 10;
+  const tvHeight = isMobile ? 3.6 : 5.5;
+  const bezelWidth = tvWidth - 0.4;
+  const bezelHeight = tvHeight - 0.3;
+  const screenWidth = tvWidth - 0.8;
+  const screenHeight = tvHeight - 0.5;
   
   return (
     <group position={position}>
       {/* Massive TV frame - 8K size */}
       <mesh castShadow receiveShadow>
-        <boxGeometry args={[10, 5.5, 0.2]} />
+        <boxGeometry args={[tvWidth, tvHeight, 0.2]} />
         <meshStandardMaterial color="#0a0a0a" roughness={0.2} metalness={0.3} />
       </mesh>
       {/* TV screen bezel */}
       <mesh position={[0, 0, 0.08]}>
-        <boxGeometry args={[9.6, 5.2, 0.05]} />
+        <boxGeometry args={[bezelWidth, bezelHeight, 0.05]} />
         <meshStandardMaterial color="#1a1a1a" />
       </mesh>
       {/* TV screen */}
       <mesh position={[0, 0, 0.12]}>
-        <planeGeometry args={[9.2, 5]} />
+        <planeGeometry args={[screenWidth, screenHeight]} />
         <meshStandardMaterial 
           color={isOn ? "#111122" : "#050505"} 
           emissive={isOn ? "#1a1a3a" : "#000000"}
@@ -156,19 +162,21 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
       {/* Project content displayed on TV when on */}
       {isOn && (
         <Html
-          position={[0, -0.6, 0.05]}
+          position={isMobile ? [0, 0, 0.05] : [0, -0.6, 0.05]}
           transform
-          distanceFactor={isMobile ? 2.2 : 2.8}
+          distanceFactor={isMobile ? 2.8 : 2.8}
+          zIndexRange={[1, 2]}
           style={{
-            width: '1410px',
-            height: '580px',
+            width: isMobile ? '850px' : '1410px',
+            height: isMobile ? '480px' : '580px',
             background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
             borderRadius: '0px',
-            padding: '28px',
-            overflow: 'auto',
+            padding: isMobile ? '16px' : '28px',
+            overflow: 'hidden',
             boxShadow: 'inset 0 0 20px rgba(0,0,0,0.3)',
             pointerEvents: 'auto',
             position: 'relative',
+            zIndex: 1,
           }}
         >
           {isMobile && (
@@ -190,6 +198,7 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
                   justifyContent: 'center',
                   cursor: 'pointer',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.35)',
+                  zIndex: 2,
                 }}
                 aria-label="Previous project"
               >
@@ -224,6 +233,7 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
                   justifyContent: 'center',
                   cursor: 'pointer',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.35)',
+                  zIndex: 2,
                 }}
                 aria-label="Next project"
               >
@@ -253,7 +263,7 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
             {/* TV Header */}
             <div style={{
               background: 'linear-gradient(90deg, #1a1a2e 0%, #16213e 100%)',
-              padding: '16px 24px',
+              padding: isMobile ? '10px 14px' : '16px 24px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -261,36 +271,36 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{
-                  width: '14px',
-                  height: '14px',
+                  width: isMobile ? '10px' : '14px',
+                  height: isMobile ? '10px' : '14px',
                   borderRadius: '50%',
                   background: '#00ff00',
                   boxShadow: '0 0 12px #00ff00',
                 }} />
-                <span style={{ color: '#888', fontSize: '16px', fontWeight: 700, letterSpacing: '2px' }}>
+                <span style={{ color: '#888', fontSize: isMobile ? '12px' : '16px', fontWeight: 700, letterSpacing: '2px' }}>
                   PROJECT SHOWCASE
                 </span>
               </div>
-              <div style={{ color: '#666', fontSize: '14px', fontWeight: 600 }}>
+              <div style={{ color: '#666', fontSize: isMobile ? '11px' : '14px', fontWeight: 600 }}>
                 {currentProject + 1} / {projects.length}
               </div>
             </div>
 
             {/* Project Content */}
-            <div style={{ flex: 1, padding: '32px 40px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ flex: 1, padding: isMobile ? '18px 20px' : '32px 40px', display: 'flex', flexDirection: 'column', gap: isMobile ? '14px' : '20px' }}>
               {/* Title */}
               <h1 style={{
-                fontSize: '36px',
+                fontSize: isMobile ? '20px' : '36px',
                 fontWeight: 800,
                 color: '#fff',
                 margin: 0,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '16px',
+                gap: isMobile ? '10px' : '16px',
               }}>
                 <span style={{
-                  width: '6px',
-                  height: '40px',
+                  width: isMobile ? '4px' : '6px',
+                  height: isMobile ? '22px' : '40px',
                   background: 'linear-gradient(180deg, #7c3aed 0%, #a855f7 100%)',
                   borderRadius: '3px',
                 }} />
@@ -299,11 +309,11 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
 
               {/* Description */}
               <p style={{
-                fontSize: '18px',
+                fontSize: isMobile ? '12px' : '18px',
                 color: '#bbb',
-                lineHeight: 1.8,
+                lineHeight: isMobile ? 1.4 : 1.8,
                 margin: 0,
-                maxWidth: '700px',
+                maxWidth: isMobile ? '100%' : '700px',
               }}>
                 {project.description}
               </p>
@@ -311,26 +321,26 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
               {/* Tech Stack */}
               <div>
                 <div style={{
-                  fontSize: '12px',
+                  fontSize: isMobile ? '10px' : '12px',
                   color: '#666',
-                  marginBottom: '12px',
+                  marginBottom: isMobile ? '8px' : '12px',
                   textTransform: 'uppercase',
                   letterSpacing: '2px',
                   fontWeight: 600,
                 }}>
                   Technologies Used
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: isMobile ? '8px' : '12px' }}>
                   {project.techStack.map((tech, i) => (
                     <span
                       key={i}
                       style={{
-                        padding: '8px 16px',
-                        borderRadius: '8px',
+                        padding: isMobile ? '6px 10px' : '8px 16px',
+                        borderRadius: isMobile ? '6px' : '8px',
                         background: '#282c3d',
                         border: '2px solid #282c3d',
                         color: '#ffffff',
-                        fontSize: '14px',
+                        fontSize: isMobile ? '10px' : '14px',
                         fontWeight: 600,
                       }}
                     >
@@ -341,7 +351,7 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
               </div>
 
               {/* Links */}
-              <div style={{ display: 'flex', gap: '20px', marginTop: 'auto' }}>
+              <div style={{ display: 'flex', gap: '12px', marginTop: 'auto', flexWrap: 'wrap' }}>
                 {project.githubUrl && (
                   <a
                     href={project.githubUrl}
@@ -350,13 +360,13 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '10px',
-                      padding: '12px 20px',
-                      borderRadius: '8px',
+                      gap: '8px',
+                      padding: isMobile ? '8px 12px' : '12px 20px',
+                      borderRadius: isMobile ? '6px' : '8px',
                       background: '#282c3d',
                       border: '2px solid #333',
                       color: '#fff',
-                      fontSize: '14px',
+                      fontSize: isMobile ? '11px' : '14px',
                       textDecoration: 'none',
                       cursor: 'pointer',
                     }}
@@ -373,12 +383,12 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '10px',
-                      padding: '12px 20px',
-                      borderRadius: '8px',
+                      gap: '8px',
+                      padding: isMobile ? '8px 12px' : '12px 20px',
+                      borderRadius: isMobile ? '6px' : '8px',
                       background: 'linear-gradient(90deg, #4287f5 0%, #6d98de 100%)',
                       color: '#fff',
-                      fontSize: '14px',
+                      fontSize: isMobile ? '11px' : '14px',
                       fontWeight: 600,
                       textDecoration: 'none',
                       cursor: 'pointer',
@@ -394,12 +404,68 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
             {/* Bottom Controls */}
             <div style={{
               background: '#0a0a0a',
-              padding: '12px 24px',
+              padding: isMobile ? '8px 12px' : '12px 24px',
               borderTop: '2px solid #222',
               display: 'flex',
               justifyContent: 'center',
-              gap: '32px',
+              gap: isMobile ? '12px' : '32px',
+              flexWrap: 'wrap',
             }}>
+              {isMobile ? (
+                <>
+                  <span style={{ color: '#555', fontSize: '13px' }}>
+                    <span style={{ 
+                      padding: '4px 10px', 
+                      background: '#1a1a1a', 
+                      borderRadius: '6px', 
+                      marginRight: '8px',
+                      border: '1px solid #333'
+                    }}>
+                      TAP ARROWS
+                    </span>
+                    Next Project
+                  </span>
+                  <span style={{ color: '#555', fontSize: '13px' }}>
+                    <span style={{ 
+                      padding: '4px 10px', 
+                      background: '#1a1a1a', 
+                      borderRadius: '6px', 
+                      marginRight: '8px',
+                      border: '1px solid #333'
+                    }}>
+                      TAP
+                    </span>
+                    Open Links
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span style={{ color: '#555', fontSize: '13px' }}>
+                    <span style={{ 
+                      padding: '4px 10px', 
+                      background: '#1a1a1a', 
+                      borderRadius: '6px', 
+                      marginRight: '8px',
+                      border: '1px solid #333'
+                    }}>
+                      RIGHT CLICK
+                    </span>
+                    Next Project
+                  </span>
+                  <span style={{ color: '#555', fontSize: '13px' }}>
+                    <span style={{ 
+                      padding: '4px 10px', 
+                      background: '#1a1a1a', 
+                      borderRadius: '6px', 
+                      marginRight: '8px',
+                      border: '1px solid #333'
+                    }}>
+                      LEFT CLICK
+                    </span>
+                    Open Links
+                  </span>
+                </>
+              )}
               <span style={{ color: '#555', fontSize: '13px' }}>
                 <span style={{ 
                   padding: '4px 10px', 
@@ -408,31 +474,7 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
                   marginRight: '8px',
                   border: '1px solid #333'
                 }}>
-                  RIGHT CLICK
-                </span>
-                Next Project
-              </span>
-              <span style={{ color: '#555', fontSize: '13px' }}>
-                <span style={{ 
-                  padding: '4px 10px', 
-                  background: '#1a1a1a', 
-                  borderRadius: '6px', 
-                  marginRight: '8px',
-                  border: '1px solid #333'
-                }}>
-                  LEFT CLICK
-                </span>
-                Open Links
-              </span>
-              <span style={{ color: '#555', fontSize: '13px' }}>
-                <span style={{ 
-                  padding: '4px 10px', 
-                  background: '#1a1a1a', 
-                  borderRadius: '6px', 
-                  marginRight: '8px',
-                  border: '1px solid #333'
-                }}>
-                  ESC
+                  {isMobile ? "✕" : "ESC"}
                 </span>
                 Exit
               </span>
@@ -454,7 +496,7 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
       {/* Ambient light strip on back */}
       {isOn && (
         <mesh position={[0, 0, -0.15]}>
-          <boxGeometry args={[9, 4.5, 0.02]} />
+          <boxGeometry args={[screenWidth, screenHeight - 0.4, 0.02]} />
           <meshStandardMaterial 
             color="#7c3aed" 
             emissive="#7c3aed" 
@@ -495,6 +537,7 @@ function DecorativeWall({ position, size, rotation = [0, 0, 0] }: {
 // Wooden Door component
 function WoodenDoor({ position, rotation = [0, 0, 0] }: { position: [number, number, number]; rotation?: [number, number, number] }) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const playerPos = useGameStore((s) => s.playerPosition);
   const setPrompt = useUIStore((s) => s.setInteractionPrompt);
   const setIsNearExitDoor = useUIStore((s) => s.setIsNearExitDoor);
@@ -596,6 +639,7 @@ export default function ProjectsRoom() {
   });
   
   const router = useRouter();
+  const isMobile = useIsMobile();
   const playerPos = useGameStore((s) => s.playerPosition);
   const setPlayerPosition = useGameStore((s) => s.setPlayerPosition);
   const roomInteractionState = useGameStore((s) => s.roomInteractionState);
@@ -630,7 +674,11 @@ export default function ProjectsRoom() {
   const seatPosition: [number, number, number] = [0, 0.7, -1.7]; // Seated position on sofa
   const tablePos: [number, number, number] = [0, 0, -4];
   const remotePos: [number, number, number] = [0, 0.48, -4];
-  const tvPos: [number, number, number] = [0, 3.5, -ROOM_DEPTH / 2 + 0.5];
+  const tvPos: [number, number, number] = [
+    0,
+    isMobile ? 2.6 : 3.5,
+    -ROOM_DEPTH / 2 + 0.5,
+  ];
 
   // Check distances and handle interactions
   useFrame(() => {
@@ -655,7 +703,7 @@ export default function ProjectsRoom() {
     switch (roomInteractionState) {
       case "none":
         if (distToSofa < 3) {
-          setPrompt("Press E to sit on sofa");
+          setPrompt(isMobile ? "Tap E to sit on sofa" : "Press E to sit on sofa");
           if (justPressedE) {
             setRoomInteractionState("sitting_sofa");
             // Sit down facing the TV
@@ -668,7 +716,11 @@ export default function ProjectsRoom() {
 
       case "sitting_sofa":
         if (!isHoldingRemote) {
-          setPrompt("Press E to pick up remote - Press ESC to leave");
+          setPrompt(
+            isMobile
+              ? "Tap E to pick up remote - Tap ✕ to leave"
+              : "Press E to pick up remote - Press ESC to leave"
+          );
           if (justPressedE) {
             setIsHoldingRemote(true);
             setRoomInteractionState("holding_remote");
@@ -682,7 +734,11 @@ export default function ProjectsRoom() {
         break;
 
       case "holding_remote":
-        setPrompt("Press E to turn on TV - Press ESC to leave");
+        setPrompt(
+          isMobile
+            ? "Tap E to turn on TV - Tap ✕ to leave"
+            : "Press E to turn on TV - Press ESC to leave"
+        );
         if (justPressedE) {
           setIsTVOn(true);
           setRoomInteractionState("watching_tv");
@@ -694,7 +750,11 @@ export default function ProjectsRoom() {
         break;
 
       case "watching_tv":
-        setPrompt("Right click for next project - Left click to open links - Press ESC to turn off TV");
+        setPrompt(
+          isMobile
+            ? "Tap arrows for next project - Tap links to open - Tap ✕ to turn off TV"
+            : "Right click for next project - Left click to open links - Press ESC to turn off TV"
+        );
         if (justPressedEsc) {
           setIsTVOn(false);
           setRoomInteractionState("holding_remote");

@@ -13,6 +13,7 @@ export function useMobileAwareKeyPress(code: string) {
   // Get mobile button states
   const mobileInteract = useMobileControlsStore((s) => s.isInteractPressed);
   const mobileBack = useMobileControlsStore((s) => s.isBackPressed);
+  const mobileSip = useMobileControlsStore((s) => s.isSipPressed);
   
   // Map keyboard codes to mobile actions
   if (code === "KeyE") {
@@ -21,6 +22,10 @@ export function useMobileAwareKeyPress(code: string) {
   
   if (code === "Escape") {
     return keyPressed || mobileBack;
+  }
+
+  if (code === "KeyQ") {
+    return keyPressed || mobileSip;
   }
   
   // For other keys, just return the keyboard state

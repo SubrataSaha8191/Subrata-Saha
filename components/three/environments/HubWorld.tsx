@@ -363,7 +363,7 @@ export default function HubWorld() {
       <FantasySky />
 
       {/* Ambient sounds based on time of day */}
-      {!isMobile && <AmbientSounds />}
+      <AmbientSounds />
 
       {/* Realistic lighting */}
       <RealisticLighting />

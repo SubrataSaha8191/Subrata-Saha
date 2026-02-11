@@ -16,8 +16,11 @@ export default function MobileActionButtons() {
   const setIsSprintActive = useMobileControlsStore((s) => s.setIsSprintActive);
   const setIsInteractPressed = useMobileControlsStore((s) => s.setIsInteractPressed);
   const setIsBackPressed = useMobileControlsStore((s) => s.setIsBackPressed);
+  const setIsSipPressed = useMobileControlsStore((s) => s.setIsSipPressed);
+  const setIsNextPressed = useMobileControlsStore((s) => s.setIsNextPressed);
   
   const isInRoom = useGameStore((s) => s.isInRoom);
+  const currentRoom = useGameStore((s) => s.currentRoom);
   const roomInteractionState = useGameStore((s) => s.roomInteractionState);
   const exitRoom = useGameStore((s) => s.exitRoom);
   const setLoading = useGameStore((s) => s.setLoading);
@@ -30,17 +33,25 @@ export default function MobileActionButtons() {
   const jumpTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const interactTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const backTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const sipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const nextTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Determine what buttons to show based on state
-  const showJump = !sittingState.isSitting && roomInteractionState === "none";
-  const showSprint = !sittingState.isSitting && roomInteractionState === "none";
-  const showInteract = !!interactionPrompt || roomInteractionState !== "none";
-  const showBack = isInRoom || roomInteractionState !== "none" || sittingState.isSitting;
   const promptText = interactionPrompt?.toLowerCase() ?? "";
   const isDoorEnterPrompt = promptText.includes("enter");
   const isDoorExitPrompt = promptText.includes("exit room");
   const isCastleDoorPrompt =
     promptText.includes("interact") && promptText.includes("door");
+  const showJump = !sittingState.isSitting && roomInteractionState === "none";
+  const showSprint = !sittingState.isSitting && roomInteractionState === "none";
+  const showInteract =
+    roomInteractionState !== "none" ||
+    (!!interactionPrompt && !isDoorEnterPrompt && !isDoorExitPrompt && !isCastleDoorPrompt);
+  const showBack = isInRoom || roomInteractionState !== "none" || sittingState.isSitting;
+  const showSip =
+    isInRoom && currentRoom === "about" && roomInteractionState === "holding_coffee";
+  const showNext =
+    isInRoom && currentRoom === "skills" && roomInteractionState === "using_computer";
 
   const showDoorAction =
     roomInteractionState === "none" &&
@@ -69,6 +80,18 @@ export default function MobileActionButtons() {
     if (backTimeoutRef.current) clearTimeout(backTimeoutRef.current);
     backTimeoutRef.current = setTimeout(() => setIsBackPressed(false), 100);
   }, [setIsBackPressed]);
+
+  const handleSipStart = useCallback(() => {
+    setIsSipPressed(true);
+    if (sipTimeoutRef.current) clearTimeout(sipTimeoutRef.current);
+    sipTimeoutRef.current = setTimeout(() => setIsSipPressed(false), 100);
+  }, [setIsSipPressed]);
+
+  const handleNextStart = useCallback(() => {
+    setIsNextPressed(true);
+    if (nextTimeoutRef.current) clearTimeout(nextTimeoutRef.current);
+    nextTimeoutRef.current = setTimeout(() => setIsNextPressed(false), 100);
+  }, [setIsNextPressed]);
 
   const handleLeaveStart = useCallback(() => {
     setLoadingStyle("dots");
@@ -102,6 +125,8 @@ export default function MobileActionButtons() {
       if (jumpTimeoutRef.current) clearTimeout(jumpTimeoutRef.current);
       if (interactTimeoutRef.current) clearTimeout(interactTimeoutRef.current);
       if (backTimeoutRef.current) clearTimeout(backTimeoutRef.current);
+      if (sipTimeoutRef.current) clearTimeout(sipTimeoutRef.current);
+      if (nextTimeoutRef.current) clearTimeout(nextTimeoutRef.current);
     };
   }, []);
 
@@ -110,6 +135,7 @@ export default function MobileActionButtons() {
   return (
     <div
       className="fixed right-4 bottom-36 z-50 flex flex-col-reverse gap-4 touch-none select-none"
+      style={{ zIndex: 3000 }}
       data-mobile-control
     >
       {/* Jump Button - bottom */}
@@ -197,6 +223,44 @@ export default function MobileActionButtons() {
           }}
         >
           <span className="text-white text-xl font-bold">E</span>
+        </button>
+      )}
+
+      {/* Sip Button */}
+      {showSip && (
+        <button
+          onTouchStart={(e) => {
+            e.preventDefault();
+            handleSipStart();
+          }}
+          className="w-14 h-14 rounded-full flex items-center justify-center
+                     active:scale-90 transition-transform"
+          style={{
+            background: "linear-gradient(145deg, rgba(168,85,247,0.9), rgba(126,34,206,0.9))",
+            boxShadow: "0 4px 15px rgba(168,85,247,0.4), inset 0 2px 4px rgba(255,255,255,0.2)",
+            border: "2px solid rgba(255,255,255,0.2)",
+          }}
+        >
+          <span className="text-white text-xs font-bold">Sip</span>
+        </button>
+      )}
+
+      {/* Next Button */}
+      {showNext && (
+        <button
+          onTouchStart={(e) => {
+            e.preventDefault();
+            handleNextStart();
+          }}
+          className="w-14 h-14 rounded-full flex items-center justify-center
+                     active:scale-90 transition-transform"
+          style={{
+            background: "linear-gradient(145deg, rgba(14,165,233,0.95), rgba(2,132,199,0.95))",
+            boxShadow: "0 4px 15px rgba(14,165,233,0.4), inset 0 2px 4px rgba(255,255,255,0.2)",
+            border: "2px solid rgba(255,255,255,0.2)",
+          }}
+        >
+          <span className="text-white text-xs font-bold">Next</span>
         </button>
       )}
 

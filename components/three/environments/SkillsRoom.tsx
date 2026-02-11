@@ -6,6 +6,7 @@ import * as THREE from "three";
 import { Html } from "@react-three/drei";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useMobileAwareKeyPress } from "@/hooks/useMobileAwareKeyPress";
+import { useMobileControlsStore } from "@/store/useMobileControlsStore";
 import { useGameStore } from "@/store/useGameStore";
 import { useUIStore } from "@/store/useUIStore";
 import Portal from "../interactables/Portal";
@@ -169,7 +170,8 @@ function Monitor({
         <Html
           position={[0, 0, 0.03]}
           transform
-          distanceFactor={isMobile ? 0.5 : 0.4}
+          distanceFactor={isMobile ? 0.4 : 0.4}
+          zIndexRange={[1, 2]}
           style={{
             width: '780px',
             height: '510px',
@@ -180,6 +182,7 @@ function Monitor({
             boxShadow: 'inset 0 0 20px rgba(0,0,0,0.3)',
             pointerEvents: isMobile ? 'auto' : 'none',
             position: 'relative',
+            zIndex: 1,
           }}
         >
           {isMobile && (
@@ -201,6 +204,7 @@ function Monitor({
                   justifyContent: 'center',
                   cursor: 'pointer',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.35)',
+                  zIndex: 2,
                 }}
                 aria-label="Next skills page"
               >
@@ -235,6 +239,7 @@ function Monitor({
                   justifyContent: 'center',
                   cursor: 'pointer',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.35)',
+                  zIndex: 2,
                 }}
                 aria-label="Previous skills page"
               >
@@ -477,6 +482,7 @@ function WoodenDoor({ position, rotation = [0, 0, 0] }: { position: [number, num
 
 export default function SkillsRoom() {
   const router = useRouter();
+  const isMobile = useIsMobile();
 
   useFrame(() => {
       // Wall collision/bounds
@@ -515,6 +521,9 @@ export default function SkillsRoom() {
   const pressEsc = useMobileAwareKeyPress("Escape");
   const lastERef = useRef(false);
   const lastEscRef = useRef(false);
+  const lastNextRef = useRef(false);
+
+  const isNextPressed = useMobileControlsStore((s) => s.isNextPressed);
 
   const [isComputerOn, setIsComputerOn] = useState(false);
   const [skillsPage, setSkillsPage] = useState(0);
@@ -549,6 +558,9 @@ export default function SkillsRoom() {
     const justPressedEsc = pressEsc && !lastEscRef.current;
     lastEscRef.current = pressEsc;
 
+    const justPressedNext = isNextPressed && !lastNextRef.current;
+    lastNextRef.current = isNextPressed;
+
     // Keep player locked when sitting
     if (sittingState.isSitting) {
       setPlayerPosition(sittingState.seatPosition);
@@ -557,7 +569,7 @@ export default function SkillsRoom() {
     switch (roomInteractionState) {
       case "none":
         if (distToChair < 2.5) {
-          setPrompt("Press E to sit on chair");
+          setPrompt(isMobile ? "Tap E to sit on chair" : "Press E to sit on chair");
           if (justPressedE) {
             setRoomInteractionState("sitting_chair");
             // Sit down facing the monitor
@@ -570,7 +582,11 @@ export default function SkillsRoom() {
 
       case "sitting_chair":
         if (!isComputerOn) {
-          setPrompt("Press E to use computer - Press ESC to stand up");
+          setPrompt(
+            isMobile
+              ? "Tap E to use computer - Tap ✕ to stand up"
+              : "Press E to use computer - Press ESC to stand up"
+          );
           if (justPressedE) {
             setIsComputerOn(true);
             setSkillsPage(0);
@@ -584,7 +600,14 @@ export default function SkillsRoom() {
         break;
 
       case "using_computer":
-        setPrompt("Right click for next page - Press ESC to stop");
+        setPrompt(
+          isMobile
+            ? "Tap Next for next page - Tap ✕ to stop"
+            : "Right click for next page - Press ESC to stop"
+        );
+        if (justPressedNext && isComputerOn) {
+          setSkillsPage((prev) => (prev + 1) % totalSkillPages);
+        }
         if (justPressedEsc) {
           setIsComputerOn(false);
           setRoomInteractionState("sitting_chair");

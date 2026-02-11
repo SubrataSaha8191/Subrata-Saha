@@ -15,6 +15,8 @@ type MobileControlsState = {
   isSprintActive: boolean;
   isInteractPressed: boolean;
   isBackPressed: boolean;
+  isSipPressed: boolean;
+  isNextPressed: boolean;
   
   // Setters
   setJoystick: (x: number, y: number) => void;
@@ -25,6 +27,8 @@ type MobileControlsState = {
   setIsSprintActive: (v: boolean) => void;
   setIsInteractPressed: (v: boolean) => void;
   setIsBackPressed: (v: boolean) => void;
+  setIsSipPressed: (v: boolean) => void;
+  setIsNextPressed: (v: boolean) => void;
 };
 
 export const useMobileControlsStore = create<MobileControlsState>((set) => ({
@@ -39,6 +43,8 @@ export const useMobileControlsStore = create<MobileControlsState>((set) => ({
   isSprintActive: false,
   isInteractPressed: false,
   isBackPressed: false,
+  isSipPressed: false,
+  isNextPressed: false,
   
   setJoystick: (x, y) => set({ joystickX: x, joystickY: y }),
   setIsJoystickActive: (v) => set({ isJoystickActive: v }),
@@ -48,4 +54,6 @@ export const useMobileControlsStore = create<MobileControlsState>((set) => ({
   setIsSprintActive: (v) => set({ isSprintActive: v }),
   setIsInteractPressed: (v) => set({ isInteractPressed: v }),
   setIsBackPressed: (v) => set({ isBackPressed: v }),
+  setIsSipPressed: (v) => set({ isSipPressed: v }),
+  setIsNextPressed: (v) => set({ isNextPressed: v }),
 }));

@@ -2,14 +2,39 @@
 
 import { useUIStore } from "@/store/useUIStore";
 import { useGameStore } from "@/store/useGameStore";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 export default function InteractionPrompt() {
   const prompt = useUIStore((s) => s.interactionPrompt);
   const isNearExitDoor = useUIStore((s) => s.isNearExitDoor);
   const isInRoom = useGameStore((s) => s.isInRoom);
+  const isMobile = useIsMobile();
 
   const isExitPrompt =
     isInRoom && (isNearExitDoor || !!prompt?.toLowerCase().includes("exit room"));
+
+  const promptText = prompt?.toLowerCase() ?? "";
+  const isDoorPrompt =
+    isExitPrompt ||
+    promptText.includes("exit room") ||
+    promptText.startsWith("enter ") ||
+    promptText.includes("press e to enter") ||
+    (promptText.includes("door") && promptText.includes("interact"));
+
+  let displayPrompt = isExitPrompt ? "Leave room" : prompt;
+
+  if (isMobile && displayPrompt) {
+    if (promptText.includes("press e to ")) {
+      displayPrompt = displayPrompt.replace(/press e to\s+/i, "");
+      displayPrompt = displayPrompt.charAt(0).toUpperCase() + displayPrompt.slice(1);
+    }
+    if (promptText.includes("interact with") && promptText.includes("door")) {
+      displayPrompt = displayPrompt.replace(/interact with\s+/i, "");
+    }
+    if (promptText.includes("exit room")) {
+      displayPrompt = "Leave room";
+    }
+  }
 
   if (!prompt && !isExitPrompt) return null;
 
@@ -27,9 +52,10 @@ export default function InteractionPrompt() {
         backdropFilter: "blur(10px)",
         fontSize: 14,
         color: "var(--fg)",
+        zIndex: 6000,
       }}
     >
-      <span style={{ opacity: 0.9 }}>{isExitPrompt ? "Leave room" : prompt}</span>
+      <span style={{ opacity: 0.9 }}>{displayPrompt}</span>
       <span
         style={{
           marginLeft: 10,
@@ -40,7 +66,7 @@ export default function InteractionPrompt() {
           fontWeight: 700,
         }}
       >
-        {isExitPrompt ? "Leave" : "E"}
+        {isExitPrompt ? "Leave" : isMobile && isDoorPrompt ? "Enter" : "E"}
       </span>
     </div>
   );
