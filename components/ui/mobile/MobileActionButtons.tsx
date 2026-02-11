@@ -37,9 +37,14 @@ export default function MobileActionButtons() {
   const promptText = interactionPrompt?.toLowerCase() ?? "";
   const isDoorEnterPrompt = promptText.includes("enter");
   const isDoorExitPrompt = promptText.includes("exit room");
+  const isCastleDoorPrompt =
+    promptText.includes("interact") && promptText.includes("door");
+
   const showDoorAction =
     roomInteractionState === "none" &&
-    ((!!interactionPrompt && (isDoorEnterPrompt || isDoorExitPrompt)) || isNearExitDoor);
+    (isInRoom
+      ? isNearExitDoor || isDoorExitPrompt
+      : !!interactionPrompt && (isDoorEnterPrompt || isCastleDoorPrompt));
 
   const handleJumpStart = useCallback(() => {
     setIsJumpPressed(true);
@@ -70,14 +75,22 @@ export default function MobileActionButtons() {
   }, [exitRoom, router, setPrompt]);
 
   const handleDoorActionStart = useCallback(() => {
-    if ((isDoorExitPrompt || isNearExitDoor) && isInRoom) {
+    if (isInRoom && (isDoorExitPrompt || isNearExitDoor)) {
       handleLeaveStart();
       return;
     }
-    if (isDoorEnterPrompt) {
+    if (!isInRoom && (isDoorEnterPrompt || isCastleDoorPrompt)) {
       handleInteractStart();
     }
-  }, [handleInteractStart, handleLeaveStart, isDoorEnterPrompt, isDoorExitPrompt, isInRoom]);
+  }, [
+    handleInteractStart,
+    handleLeaveStart,
+    isDoorEnterPrompt,
+    isDoorExitPrompt,
+    isCastleDoorPrompt,
+    isInRoom,
+    isNearExitDoor,
+  ]);
 
   // Cleanup timeouts
   useEffect(() => {
@@ -209,20 +222,24 @@ export default function MobileActionButtons() {
             e.preventDefault();
             handleDoorActionStart();
           }}
+          onClick={(e) => {
+            e.preventDefault();
+            handleDoorActionStart();
+          }}
           className="w-14 h-14 rounded-full flex items-center justify-center
                      active:scale-90 transition-transform"
           style={{
-            background: isDoorExitPrompt
+            background: isInRoom
               ? "linear-gradient(145deg, rgba(14,116,144,0.95), rgba(8,47,73,0.95))"
               : "linear-gradient(145deg, rgba(16,185,129,0.95), rgba(5,150,105,0.95))",
-            boxShadow: isDoorExitPrompt
+            boxShadow: isInRoom
               ? "0 4px 15px rgba(8,145,178,0.45), inset 0 2px 4px rgba(255,255,255,0.2)"
               : "0 4px 15px rgba(16,185,129,0.45), inset 0 2px 4px rgba(255,255,255,0.2)",
             border: "2px solid rgba(255,255,255,0.2)",
           }}
         >
           <span className="text-white text-xs font-bold">
-            {isDoorExitPrompt ? "Leave" : "Enter"}
+            {isInRoom ? "Leave" : "Enter"}
           </span>
         </button>
       )}
