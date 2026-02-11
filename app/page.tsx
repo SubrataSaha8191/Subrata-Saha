@@ -5,6 +5,7 @@ import SceneRoot from "@/components/three/SceneRoot";
 import HUD from "@/components/ui/HUD/HUD";
 import CharacterCustomizer from "@/components/ui/CharacterCustomizer";
 import ControlsInfo from "@/components/ui/ControlsInfo";
+import MobileControls from "@/components/ui/mobile/MobileControls";
 import Preloader from "@/components/Preloader";
 import { useGameStore } from "@/store/useGameStore";
 
@@ -42,6 +43,7 @@ export default function HomePage() {
         <HUD />
         <ControlsInfo />
         <CharacterCustomizer />
+        <MobileControls />
       </div>
       {isLoading && (
         <Preloader

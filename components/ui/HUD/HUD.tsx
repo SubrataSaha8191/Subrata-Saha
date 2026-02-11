@@ -1,6 +1,7 @@
 "use client";
 
 import { useGameStore } from "@/store/useGameStore";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import Crosshair from "./Crosshair";
 import InteractionPrompt from "./InteractionPrompt";
 import LoadingOverlay from "./LoadingOverlay";
@@ -15,9 +16,79 @@ export default function HUD() {
   const isInRoom = useGameStore((s) => s.isInRoom);
   const currentRoom = useGameStore((s) => s.currentRoom);
   const roomInteractionState = useGameStore((s) => s.roomInteractionState);
+  const isMobile = useIsMobile();
 
   // Get appropriate controls text based on context
   const getControlsText = () => {
+    if (isMobile) {
+      return getMobileControlsText();
+    }
+    return getDesktopControlsText();
+  };
+
+  const getMobileControlsText = () => {
+    if (!isInRoom) {
+      return "Use joystick to move • Tap buttons to interact";
+    }
+
+    switch (currentRoom) {
+      case "projects":
+        switch (roomInteractionState) {
+          case "none":
+            return "Joystick to move • E to sit • ✕ to exit";
+          case "sitting_sofa":
+            return "E to pick up remote • ✕ to stand up";
+          case "holding_remote":
+            return "E to turn on TV • ✕ to put down";
+          case "watching_tv":
+            return "Tap screen for next • ✕ to stop";
+          default:
+            return "✕ to go back";
+        }
+
+      case "skills":
+        switch (roomInteractionState) {
+          case "none":
+            return "Joystick to move • E to sit • ✕ to exit";
+          case "sitting_chair":
+            return "E to use computer • ✕ to stand up";
+          case "using_computer":
+            return "✕ to stop using computer";
+          default:
+            return "✕ to go back";
+        }
+
+      case "about":
+        switch (roomInteractionState) {
+          case "none":
+            return "Joystick to move • E to sit • ✕ to exit";
+          case "sitting_sofa":
+            return "E to pick up coffee • ✕ to stand up";
+          case "holding_coffee":
+            return "Tap to continue • ✕ to put down";
+          case "talking_npc":
+            return "Tap to continue • ✕ to skip";
+          default:
+            return "✕ to go back";
+        }
+
+      case "contact":
+        switch (roomInteractionState) {
+          case "none":
+            return "Joystick to move • E to interact • ✕ to exit";
+          case "using_telephone":
+          case "entering_code":
+            return "Enter code on keypad • ✕ to exit";
+          default:
+            return "✕ to go back";
+        }
+
+      default:
+        return "Joystick to move • ✕ to exit";
+    }
+  };
+
+  const getDesktopControlsText = () => {
     if (!isInRoom) {
       return "WASD / Arrow keys to move • Shift to sprint • E to interact";
     }

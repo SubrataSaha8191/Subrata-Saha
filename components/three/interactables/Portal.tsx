@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { useKeyPress } from "@/hooks/useKeyPress";
+import { useMobileAwareKeyPress } from "@/hooks/useMobileAwareKeyPress";
 import { useGameStore } from "@/store/useGameStore";
 import PortalTrigger from "./PortalTrigger";
 
@@ -19,7 +19,7 @@ export default function Portal({
   const isLoading = useGameStore((s) => s.isLoading);
   const setLoading = useGameStore((s) => s.setLoading);
 
-  const pressE = useKeyPress("KeyE");
+  const pressE = useMobileAwareKeyPress("KeyE");
 
   const [canEnter, setCanEnter] = useState(false);
   const lastPressedRef = useRef(false);

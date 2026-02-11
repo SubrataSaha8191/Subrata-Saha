@@ -1,11 +1,13 @@
 "use client";
 
 import { useUIStore } from "@/store/useUIStore";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 export default function Crosshair() {
   const showTelephoneUI = useUIStore((s) => s.showTelephoneUI);
+  const isMobile = useIsMobile();
 
-  if (showTelephoneUI) return null;
+  if (showTelephoneUI || isMobile) return null;
 
   return (
     <div

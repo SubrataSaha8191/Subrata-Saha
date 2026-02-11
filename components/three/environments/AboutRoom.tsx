@@ -3,6 +3,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { useMobileAwareKeyPress } from "@/hooks/useMobileAwareKeyPress";
 import { useKeyPress } from "@/hooks/useKeyPress";
 import { useGameStore } from "@/store/useGameStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -182,7 +183,7 @@ function WoodenDoor({ position, rotation = [0, 0, 0] }: { position: [number, num
   const playerPos = useGameStore((s) => s.playerPosition);
   const setPrompt = useUIStore((s) => s.setInteractionPrompt);
   const exitRoom = useGameStore((s) => s.exitRoom);
-  const pressE = useKeyPress("KeyE");
+  const pressE = useMobileAwareKeyPress("KeyE");
   const lastERef = useRef(false);
   const roomInteractionState = useGameStore((s) => s.roomInteractionState);
 
@@ -275,9 +276,9 @@ export default function AboutRoom() {
   });
   const setDialogueSpeaker = useUIStore((s) => s.setDialogueSpeaker);
   
-  const pressE = useKeyPress("KeyE");
+  const pressE = useMobileAwareKeyPress("KeyE");
   const pressQ = useKeyPress("KeyQ");
-  const pressEsc = useKeyPress("Escape");
+  const pressEsc = useMobileAwareKeyPress("Escape");
   const lastERef = useRef(false);
   const lastQRef = useRef(false);
   const lastEscRef = useRef(false);

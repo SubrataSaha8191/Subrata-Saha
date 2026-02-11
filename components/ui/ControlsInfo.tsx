@@ -60,6 +60,8 @@ export default function ControlsInfo() {
                                 <ControlItem keys={["↑", "←", "↓", "→"]} action="Move (Alt)" />
                                 <ControlItem keys={["Shift"]} action="Sprint" />
                                 <ControlItem keys={["Space"]} action="Jump" />
+                                <ControlItem keys={["Joystick (Mobile)"]} action="Move" />
+                                <ControlItem keys={["Tap ⬆ (Mobile)"]} action="Jump" />
                             </div>
                         </div>
 
@@ -82,6 +84,7 @@ export default function ControlsInfo() {
                             <h4 className="text-green-400 font-semibold text-sm uppercase tracking-wider">Interaction</h4>
                             <div className="text-sm">
                                 <ControlItem keys={["E"]} action="Enter Portal" />
+                                <ControlItem keys={["Tap E (Mobile)"]} action="Enter Portal / Interact" />
                             </div>
                         </div>
                     </div>

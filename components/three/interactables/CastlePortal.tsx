@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { useKeyPress } from "@/hooks/useKeyPress";
+import { useMobileAwareKeyPress } from "@/hooks/useMobileAwareKeyPress";
 import { useGameStore } from "@/store/useGameStore";
 import { useUIStore } from "@/store/useUIStore";
 
@@ -44,7 +44,7 @@ export default function CastlePortal({
   const enterRoom = useGameStore((s) => s.enterRoom);
   const setPrompt = useUIStore((s) => s.setInteractionPrompt);
 
-  const pressE = useKeyPress("KeyE");
+  const pressE = useMobileAwareKeyPress("KeyE");
   const [canEnter, setCanEnter] = useState(false);
   const [doorOpen, setDoorOpen] = useState(false);
   const [nearDoor, setNearDoor] = useState(false);

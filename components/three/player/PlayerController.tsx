@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { useKeyPress } from "@/hooks/useKeyPress";
 import { useGameStore } from "@/store/useGameStore";
+import { useMobileControlsStore } from "@/store/useMobileControlsStore";
 
 const MOVE_SPEED = 6;
 const SPRINT_MULTIPLIER = 1.6;
@@ -33,6 +34,12 @@ export default function PlayerController() {
   const shiftLeft = useKeyPress("ShiftLeft");
   const shiftRight = useKeyPress("ShiftRight");
   const space = useKeyPress("Space");
+
+  // Mobile controls
+  const joystickX = useMobileControlsStore((s) => s.joystickX);
+  const joystickY = useMobileControlsStore((s) => s.joystickY);
+  const mobileJump = useMobileControlsStore((s) => s.isJumpPressed);
+  const mobileSprint = useMobileControlsStore((s) => s.isSprintActive);
 
   const isJumping = useGameStore((s) => s.isJumping);
   const velocityY = useGameStore((s) => s.velocityY);
@@ -80,8 +87,8 @@ export default function PlayerController() {
     }
 
     // Jump + gravity (allow jumping while moving)
-    const justPressedSpace = space && !lastSpaceRef.current;
-    lastSpaceRef.current = space;
+    const justPressedSpace = (space || mobileJump) && !lastSpaceRef.current;
+    lastSpaceRef.current = space || mobileJump;
 
     const grounded = player.position.y <= GROUND_Y + 0.001;
     if (justPressedSpace && grounded && !isJumping) {
@@ -104,19 +111,26 @@ export default function PlayerController() {
     }
 
     // Only process movement when completely unlocked
-    const isMovingForward = w || up;
-    const isMovingBack = s || down;
-    const isMovingLeft = a || left;
-    const isMovingRight = d || right;
-    const isSprinting = shiftLeft || shiftRight;
+    // Combine keyboard and mobile joystick input
+    const isMovingForward = w || up || joystickY > 0.1;
+    const isMovingBack = s || down || joystickY < -0.1;
+    const isMovingLeft = a || left || joystickX < -0.1;
+    const isMovingRight = d || right || joystickX > 0.1;
+    const isSprinting = shiftLeft || shiftRight || mobileSprint;
     
     const speed = MOVE_SPEED * (isSprinting ? SPRINT_MULTIPLIER : 1);
 
-    const dir = new THREE.Vector3(
-      (isMovingRight ? 1 : 0) - (isMovingLeft ? 1 : 0),
-      0,
-      (isMovingBack ? 1 : 0) - (isMovingForward ? 1 : 0)
-    );
+    // For mobile joystick, use analog values for smoother movement
+    let dirX = (isMovingRight ? 1 : 0) - (isMovingLeft ? 1 : 0);
+    let dirZ = (isMovingBack ? 1 : 0) - (isMovingForward ? 1 : 0);
+    
+    // If using joystick, use the analog values directly for smoother control
+    if (Math.abs(joystickX) > 0.1 || Math.abs(joystickY) > 0.1) {
+      dirX = joystickX;
+      dirZ = -joystickY; // Invert because joystick Y is already inverted in the component
+    }
+
+    const dir = new THREE.Vector3(dirX, 0, dirZ);
 
     if (dir.lengthSq() > 0) {
       dir.normalize();
