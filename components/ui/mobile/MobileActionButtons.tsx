@@ -20,6 +20,8 @@ export default function MobileActionButtons() {
   const isInRoom = useGameStore((s) => s.isInRoom);
   const roomInteractionState = useGameStore((s) => s.roomInteractionState);
   const exitRoom = useGameStore((s) => s.exitRoom);
+  const setLoading = useGameStore((s) => s.setLoading);
+  const setLoadingStyle = useGameStore((s) => s.setLoadingStyle);
   const sittingState = useGameStore((s) => s.sittingState);
   const interactionPrompt = useUIStore((s) => s.interactionPrompt);
   const setPrompt = useUIStore((s) => s.setInteractionPrompt);
@@ -69,10 +71,12 @@ export default function MobileActionButtons() {
   }, [setIsBackPressed]);
 
   const handleLeaveStart = useCallback(() => {
+    setLoadingStyle("dots");
+    setLoading(true);
     exitRoom();
     setPrompt(null);
     router.push("/");
-  }, [exitRoom, router, setPrompt]);
+  }, [exitRoom, router, setLoading, setLoadingStyle, setPrompt]);
 
   const handleDoorActionStart = useCallback(() => {
     if (isInRoom && (isDoorExitPrompt || isNearExitDoor)) {

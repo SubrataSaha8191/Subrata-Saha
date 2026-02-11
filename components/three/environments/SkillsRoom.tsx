@@ -403,6 +403,8 @@ function WoodenDoor({ position, rotation = [0, 0, 0] }: { position: [number, num
   const setPrompt = useUIStore((s) => s.setInteractionPrompt);
   const setIsNearExitDoor = useUIStore((s) => s.setIsNearExitDoor);
   const exitRoom = useGameStore((s) => s.exitRoom);
+  const setLoading = useGameStore((s) => s.setLoading);
+  const setLoadingStyle = useGameStore((s) => s.setLoadingStyle);
   const pressE = useMobileAwareKeyPress("KeyE");
   const lastERef = useRef(false);
   const roomInteractionState = useGameStore((s) => s.roomInteractionState);
@@ -427,6 +429,8 @@ function WoodenDoor({ position, rotation = [0, 0, 0] }: { position: [number, num
       setPrompt("Press E to exit room");
       setIsNearExitDoor(true);
       if (justPressedE) {
+        setLoadingStyle("dots");
+        setLoading(true);
         exitRoom();
         router.push("/");
       }

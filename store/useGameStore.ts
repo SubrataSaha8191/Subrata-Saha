@@ -25,6 +25,7 @@ type SittingState = {
 
 type GameState = {
   isLoading: boolean;
+  loadingStyle: "panel" | "dots";
   playerPosition: [number, number, number];
   playerObject: THREE.Object3D | null;
 
@@ -65,6 +66,7 @@ type GameState = {
   isDialogueActive: boolean;
 
   setLoading: (v: boolean) => void;
+  setLoadingStyle: (v: "panel" | "dots") => void;
   setPlayerPosition: (pos: [number, number, number]) => void;
   setPlayerObject: (obj: THREE.Object3D | null) => void;
 
@@ -113,6 +115,7 @@ type GameState = {
 
 export const useGameStore = create<GameState>((set) => ({
   isLoading: false,
+  loadingStyle: "panel",
   playerPosition: [0, 0.9, 10],
   playerObject: null,
 
@@ -157,6 +160,7 @@ export const useGameStore = create<GameState>((set) => ({
   isDialogueActive: false,
 
   setLoading: (v) => set({ isLoading: v }),
+  setLoadingStyle: (v) => set({ loadingStyle: v }),
   setPlayerPosition: (pos) => set({ playerPosition: pos }),
   setPlayerObject: (obj) => set({ playerObject: obj }),
 

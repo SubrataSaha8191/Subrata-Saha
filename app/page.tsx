@@ -16,16 +16,18 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showContent, setShowContent] = useState(false);
   const setLoading = useGameStore((s) => s.setLoading);
+  const setLoadingStyle = useGameStore((s) => s.setLoadingStyle);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const hasSeenPreloader = window.sessionStorage.getItem(PRELOADER_KEY) === "1";
+    const hasSeenPreloader = window.localStorage.getItem(PRELOADER_KEY) === "1";
     setIsLoading(!hasSeenPreloader);
     setShowContent(hasSeenPreloader);
     setLoading(!hasSeenPreloader);
+    setLoadingStyle("panel");
     setIsReady(true);
     return () => setLoading(false);
-  }, [setLoading]);
+  }, [setLoading, setLoadingStyle]);
 
   // Trigger content fade-in after preloader completes
   useEffect(() => {
@@ -56,9 +58,10 @@ export default function HomePage() {
       {isReady && isLoading && (
         <Preloader
           onComplete={() => {
-            window.sessionStorage.setItem(PRELOADER_KEY, "1");
+            window.localStorage.setItem(PRELOADER_KEY, "1");
             setIsLoading(false);
             setLoading(false);
+            setLoadingStyle("panel");
           }}
           minDuration={3500}
         />
