@@ -16,6 +16,7 @@ import Rocks, { Pond } from "../environment/Rocks";
 import RealisticLighting from "../environment/Lighting";
 import AmbientSounds from "../environment/AmbientSounds";
 import { useGameStore } from "@/store/useGameStore";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 // Component to switch between butterflies (day) and fireflies (night)
 function DayNightCreatures() {
@@ -354,13 +355,15 @@ function DragonStatue() {
 }
 
 export default function HubWorld() {
+  const isMobile = useIsMobile();
+
   return (
     <group>
       {/* Sky and atmosphere */}
       <FantasySky />
 
       {/* Ambient sounds based on time of day */}
-      <AmbientSounds />
+      {!isMobile && <AmbientSounds />}
 
       {/* Realistic lighting */}
       <RealisticLighting />
@@ -369,25 +372,25 @@ export default function HubWorld() {
       <RealisticGround />
 
       {/* Animated grass */}
-      <AnimatedGrass />
+      {!isMobile && <AnimatedGrass />}
 
       {/* Forest of trees */}
-      <Forest count={15} area={80} avoidCenter={18} />
+      {!isMobile && <Forest count={15} area={80} avoidCenter={18} />}
 
       {/* Flowers scattered around */}
-      <Flowers count={30} area={70} />
+      {!isMobile && <Flowers count={30} area={70} />}
 
       {/* Butterflies during day (6am-6pm), Fireflies at night */}
-      <DayNightCreatures />
+      {!isMobile && <DayNightCreatures />}
 
       {/* Rocks scattered around */}
-      <Rocks count={12} area={70} />
+      {!isMobile && <Rocks count={12} area={70} />}
 
       {/* Water pond */}
-      <Pond position={[15, 0, 10]} />
+      {!isMobile && <Pond position={[15, 0, 10]} />}
 
       {/* Hanging bridge at the start */}
-      <HangingBridge position={[0, 0.5, 20]} length={10} width={3} />
+      {!isMobile && <HangingBridge position={[0, 0.5, 20]} length={10} width={3} />}
 
       {/* Castle Portals with realistic doors - scaled up */}
       <CastlePortal

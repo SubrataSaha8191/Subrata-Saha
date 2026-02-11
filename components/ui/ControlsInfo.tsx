@@ -26,17 +26,26 @@ export default function ControlsInfo() {
 
             {/* Controls Panel */}
             {isOpen && (
+            import { useIsMobile } from "@/hooks/useIsMobile";
                 <div className="fixed bottom-40 right-6 z-50 
                         bg-linear-to-br from-gray-900/95 to-gray-800/95 
                         backdrop-blur-xl rounded-2xl p-5
                         border border-white/10 shadow-2xl shadow-blue-500/20
+                const isMobile = useIsMobile();
+
+                const buttonPosition = isMobile
+                    ? "fixed top-20 right-4"
+                    : "fixed bottom-24 right-6";
+                const panelPosition = isMobile
+                    ? "fixed top-36 right-4"
+                    : "fixed bottom-40 right-6";
                         min-w-70">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-white font-bold text-lg flex items-center gap-2">
                             <span>🎮</span> Controls
                         </h3>
                         <button
-                            onClick={() => setIsOpen(false)}
+                            className={`${buttonPosition} z-50 w-14 h-14 rounded-full 
                             className="text-gray-400 hover:text-white transition-colors"
                         >
                             ✕
@@ -51,7 +60,7 @@ export default function ControlsInfo() {
                         </span>
                     </div>
 
-                    <div className="space-y-3">
+                            <div className={`${panelPosition} z-50 
                         {/* Movement */}
                         <div className="space-y-2">
                             <h4 className="text-purple-400 font-semibold text-sm uppercase tracking-wider">Movement</h4>
