@@ -44,7 +44,7 @@ export function usePointerLock() {
   const exitLock = useCallback(() => {
     try {
       if (!document.pointerLockElement) return;
-      const result = document.exitPointerLock?.();
+      const result = document.exitPointerLock?.() as unknown;
       if (result && typeof (result as Promise<void>).catch === "function") {
         (result as Promise<void>).catch((err) => {
           if (err?.name === "SecurityError" || /exited the lock/i.test(String(err))) return;
