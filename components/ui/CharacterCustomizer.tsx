@@ -16,10 +16,10 @@ export default function CharacterCustomizer() {
     const isMobile = useIsMobile();
 
     const buttonPosition = isMobile
-        ? "fixed top-20 left-4"
+        ? "fixed top-32 right-4"
         : "fixed bottom-6 right-6";
     const panelPosition = isMobile
-        ? "fixed top-36 left-4"
+        ? "fixed top-48 right-4"
         : "fixed bottom-24 right-6";
 
     return (
@@ -27,13 +27,13 @@ export default function CharacterCustomizer() {
             {/* Toggle Button */}
             <button
                 onClick={toggleCustomizer}
-                className={`${buttonPosition} z-50 w-14 h-14 rounded-full 
-                   bg-linear-to-br from-purple-600 to-pink-600 
-                   hover:from-purple-500 hover:to-pink-500
-                   shadow-lg shadow-purple-500/30 
-                   flex items-center justify-center ml-62 mt-10
-                   transition-all duration-300 hover:scale-110
-                   border-2 border-white/20`}
+                     className={`${buttonPosition} z-50 w-14 h-14 rounded-full 
+                         bg-linear-to-br from-purple-600 to-pink-600 
+                         hover:from-purple-500 hover:to-pink-500
+                         shadow-lg shadow-purple-500/30 
+                         flex items-center justify-center
+                         transition-all duration-300 hover:scale-110
+                         border-2 border-white/20`}
                 title="Customize Character"
             >
                 <span className="text-2xl">👤</span>

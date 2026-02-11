@@ -1,11 +1,17 @@
 "use client";
 
 import { useUIStore } from "@/store/useUIStore";
+import { useGameStore } from "@/store/useGameStore";
 
 export default function InteractionPrompt() {
   const prompt = useUIStore((s) => s.interactionPrompt);
+  const isNearExitDoor = useUIStore((s) => s.isNearExitDoor);
+  const isInRoom = useGameStore((s) => s.isInRoom);
 
-  if (!prompt) return null;
+  const isExitPrompt =
+    isInRoom && (isNearExitDoor || !!prompt?.toLowerCase().includes("exit room"));
+
+  if (!prompt && !isExitPrompt) return null;
 
   return (
     <div
@@ -23,7 +29,7 @@ export default function InteractionPrompt() {
         color: "var(--fg)",
       }}
     >
-      <span style={{ opacity: 0.9 }}>{prompt}</span>
+      <span style={{ opacity: 0.9 }}>{isExitPrompt ? "Leave room" : prompt}</span>
       <span
         style={{
           marginLeft: 10,
@@ -34,7 +40,7 @@ export default function InteractionPrompt() {
           fontWeight: 700,
         }}
       >
-        E
+        {isExitPrompt ? "Leave" : "E"}
       </span>
     </div>
   );

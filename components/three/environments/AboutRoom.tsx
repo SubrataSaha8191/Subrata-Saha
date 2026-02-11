@@ -182,10 +182,16 @@ function WoodenDoor({ position, rotation = [0, 0, 0] }: { position: [number, num
   const router = useRouter();
   const playerPos = useGameStore((s) => s.playerPosition);
   const setPrompt = useUIStore((s) => s.setInteractionPrompt);
+  const setIsNearExitDoor = useUIStore((s) => s.setIsNearExitDoor);
   const exitRoom = useGameStore((s) => s.exitRoom);
   const pressE = useMobileAwareKeyPress("KeyE");
   const lastERef = useRef(false);
   const roomInteractionState = useGameStore((s) => s.roomInteractionState);
+  const uiGetState = useUIStore.getState;
+
+  useEffect(() => {
+    return () => setIsNearExitDoor(false);
+  }, [setIsNearExitDoor]);
 
   useFrame(() => {
     // Only allow exit when not interacting
@@ -200,10 +206,19 @@ function WoodenDoor({ position, rotation = [0, 0, 0] }: { position: [number, num
 
     if (dist < 3) {
       setPrompt("Press E to exit room");
+      setIsNearExitDoor(true);
       if (justPressedE) {
         exitRoom();
         router.push("/");
       }
+      return;
+    }
+
+    setIsNearExitDoor(false);
+
+    const currentPrompt = uiGetState().interactionPrompt;
+    if (currentPrompt?.toLowerCase().includes("exit room")) {
+      setPrompt(null);
     }
   });
 

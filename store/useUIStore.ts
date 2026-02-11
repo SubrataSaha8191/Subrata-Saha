@@ -3,6 +3,8 @@ import { create } from "zustand";
 type UIState = {
   interactionPrompt: string | null;
   setInteractionPrompt: (text: string | null) => void;
+  isNearExitDoor: boolean;
+  setIsNearExitDoor: (v: boolean) => void;
 
   // Dialogue system
   dialogueText: string | null;
@@ -26,6 +28,8 @@ type UIState = {
 export const useUIStore = create<UIState>((set) => ({
   interactionPrompt: null,
   setInteractionPrompt: (text) => set({ interactionPrompt: text }),
+  isNearExitDoor: false,
+  setIsNearExitDoor: (v) => set({ isNearExitDoor: v }),
 
   // Dialogue system
   dialogueText: null,

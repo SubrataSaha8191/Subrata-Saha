@@ -11,9 +11,23 @@ export function usePointerLock() {
       if (document.pointerLockElement) return;
       const canvas = document.querySelector("canvas") as HTMLCanvasElement | null;
       if (canvas?.requestPointerLock) {
-        canvas.requestPointerLock();
+        const result = canvas.requestPointerLock();
+        if (result && typeof (result as Promise<void>).catch === "function") {
+          (result as Promise<void>).catch((err) => {
+            if (err?.name === "SecurityError" || /exited the lock/i.test(String(err))) return;
+            // eslint-disable-next-line no-console
+            console.warn("Pointer lock request failed:", err);
+          });
+        }
       } else {
-        document.body.requestPointerLock?.();
+        const result = document.body.requestPointerLock?.();
+        if (result && typeof (result as Promise<void>).catch === "function") {
+          (result as Promise<void>).catch((err) => {
+            if (err?.name === "SecurityError" || /exited the lock/i.test(String(err))) return;
+            // eslint-disable-next-line no-console
+            console.warn("Pointer lock request failed:", err);
+          });
+        }
       }
     } catch (err: any) {
       // Ignore SecurityError where user exits the lock before the request completes
@@ -30,7 +44,14 @@ export function usePointerLock() {
   const exitLock = useCallback(() => {
     try {
       if (!document.pointerLockElement) return;
-      document.exitPointerLock?.();
+      const result = document.exitPointerLock?.();
+      if (result && typeof (result as Promise<void>).catch === "function") {
+        (result as Promise<void>).catch((err) => {
+          if (err?.name === "SecurityError" || /exited the lock/i.test(String(err))) return;
+          // eslint-disable-next-line no-console
+          console.warn("Pointer lock exit failed:", err);
+        });
+      }
     } catch (err: any) {
       if (err?.name === "SecurityError" || /exited the lock/i.test(String(err))) {
         return;

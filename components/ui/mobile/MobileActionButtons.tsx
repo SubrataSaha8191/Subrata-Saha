@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useMobileControlsStore } from "@/store/useMobileControlsStore";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useGameStore } from "@/store/useGameStore";
@@ -8,6 +9,7 @@ import { useUIStore } from "@/store/useUIStore";
 
 export default function MobileActionButtons() {
   const isMobile = useIsMobile();
+  const router = useRouter();
   
   const setIsJumpPressed = useMobileControlsStore((s) => s.setIsJumpPressed);
   const isSprintActive = useMobileControlsStore((s) => s.isSprintActive);
@@ -17,8 +19,11 @@ export default function MobileActionButtons() {
   
   const isInRoom = useGameStore((s) => s.isInRoom);
   const roomInteractionState = useGameStore((s) => s.roomInteractionState);
+  const exitRoom = useGameStore((s) => s.exitRoom);
   const sittingState = useGameStore((s) => s.sittingState);
   const interactionPrompt = useUIStore((s) => s.interactionPrompt);
+  const setPrompt = useUIStore((s) => s.setInteractionPrompt);
+  const isNearExitDoor = useUIStore((s) => s.isNearExitDoor);
   
   const jumpTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const interactTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -29,6 +34,12 @@ export default function MobileActionButtons() {
   const showSprint = !sittingState.isSitting && roomInteractionState === "none";
   const showInteract = !!interactionPrompt || roomInteractionState !== "none";
   const showBack = isInRoom || roomInteractionState !== "none" || sittingState.isSitting;
+  const promptText = interactionPrompt?.toLowerCase() ?? "";
+  const isDoorEnterPrompt = promptText.includes("enter");
+  const isDoorExitPrompt = promptText.includes("exit room");
+  const showDoorAction =
+    roomInteractionState === "none" &&
+    ((!!interactionPrompt && (isDoorEnterPrompt || isDoorExitPrompt)) || isNearExitDoor);
 
   const handleJumpStart = useCallback(() => {
     setIsJumpPressed(true);
@@ -51,6 +62,22 @@ export default function MobileActionButtons() {
     if (backTimeoutRef.current) clearTimeout(backTimeoutRef.current);
     backTimeoutRef.current = setTimeout(() => setIsBackPressed(false), 100);
   }, [setIsBackPressed]);
+
+  const handleLeaveStart = useCallback(() => {
+    exitRoom();
+    setPrompt(null);
+    router.push("/");
+  }, [exitRoom, router, setPrompt]);
+
+  const handleDoorActionStart = useCallback(() => {
+    if ((isDoorExitPrompt || isNearExitDoor) && isInRoom) {
+      handleLeaveStart();
+      return;
+    }
+    if (isDoorEnterPrompt) {
+      handleInteractStart();
+    }
+  }, [handleInteractStart, handleLeaveStart, isDoorEnterPrompt, isDoorExitPrompt, isInRoom]);
 
   // Cleanup timeouts
   useEffect(() => {
@@ -172,6 +199,31 @@ export default function MobileActionButtons() {
           }}
         >
           <span className="text-white text-xl font-bold">✕</span>
+        </button>
+      )}
+
+      {/* Door Action Button (enter/leave) */}
+      {showDoorAction && (
+        <button
+          onTouchStart={(e) => {
+            e.preventDefault();
+            handleDoorActionStart();
+          }}
+          className="w-14 h-14 rounded-full flex items-center justify-center
+                     active:scale-90 transition-transform"
+          style={{
+            background: isDoorExitPrompt
+              ? "linear-gradient(145deg, rgba(14,116,144,0.95), rgba(8,47,73,0.95))"
+              : "linear-gradient(145deg, rgba(16,185,129,0.95), rgba(5,150,105,0.95))",
+            boxShadow: isDoorExitPrompt
+              ? "0 4px 15px rgba(8,145,178,0.45), inset 0 2px 4px rgba(255,255,255,0.2)"
+              : "0 4px 15px rgba(16,185,129,0.45), inset 0 2px 4px rgba(255,255,255,0.2)",
+            border: "2px solid rgba(255,255,255,0.2)",
+          }}
+        >
+          <span className="text-white text-xs font-bold">
+            {isDoorExitPrompt ? "Leave" : "Enter"}
+          </span>
         </button>
       )}
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import SceneRoot from "@/components/three/SceneRoot";
 import HUD from "@/components/ui/HUD/HUD";
 import CharacterCustomizer from "@/components/ui/CharacterCustomizer";
@@ -9,25 +9,33 @@ import MobileControls from "@/components/ui/mobile/MobileControls";
 import Preloader from "@/components/Preloader";
 import { useGameStore } from "@/store/useGameStore";
 
+const PRELOADER_KEY = "preloaderSeen";
+
 export default function HomePage() {
-  const hasLoadedOnce = useRef(false);
-  const [isLoading, setIsLoading] = useState(!hasLoadedOnce.current);
-  const [showContent, setShowContent] = useState(hasLoadedOnce.current);
+  const [isReady, setIsReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showContent, setShowContent] = useState(false);
   const setLoading = useGameStore((s) => s.setLoading);
 
   useEffect(() => {
-    setLoading(true);
+    if (typeof window === "undefined") return;
+    const hasSeenPreloader = window.sessionStorage.getItem(PRELOADER_KEY) === "1";
+    setIsLoading(!hasSeenPreloader);
+    setShowContent(hasSeenPreloader);
+    setLoading(!hasSeenPreloader);
+    setIsReady(true);
     return () => setLoading(false);
   }, [setLoading]);
 
   // Trigger content fade-in after preloader completes
   useEffect(() => {
+    if (!isReady) return;
     if (!isLoading) {
       // Small delay to ensure smooth transition
       const timer = setTimeout(() => setShowContent(true), 50);
       return () => clearTimeout(timer);
     }
-  }, [isLoading]);
+  }, [isLoading, isReady]);
 
   return (
     <>
@@ -45,10 +53,10 @@ export default function HomePage() {
         <CharacterCustomizer />
         <MobileControls />
       </div>
-      {isLoading && (
+      {isReady && isLoading && (
         <Preloader
           onComplete={() => {
-            hasLoadedOnce.current = true;
+            window.sessionStorage.setItem(PRELOADER_KEY, "1");
             setIsLoading(false);
             setLoading(false);
           }}
