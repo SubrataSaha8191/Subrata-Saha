@@ -64,7 +64,10 @@ export default function MobileActionButtons() {
   if (!isMobile) return null;
 
   return (
-    <div className="fixed right-6 bottom-36 z-50 flex flex-col-reverse gap-4 touch-none select-none">
+    <div
+      className="fixed right-4 bottom-36 z-50 flex flex-col-reverse gap-4 touch-none select-none"
+      data-mobile-control
+    >
       {/* Jump Button - bottom */}
       {showJump && (
         <button
@@ -80,7 +83,21 @@ export default function MobileActionButtons() {
             border: "2px solid rgba(255,255,255,0.2)",
           }}
         >
-          <span className="text-white text-2xl">⬆</span>
+          <span className="text-white" aria-label="Jump">
+            <svg
+              width="26"
+              height="26"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 19V5" />
+              <path d="M5 12l7-7 7 7" />
+            </svg>
+          </span>
         </button>
       )}
 
@@ -94,16 +111,29 @@ export default function MobileActionButtons() {
           className="w-14 h-14 rounded-full flex items-center justify-center
                      active:scale-90 transition-transform"
           style={{
-            background: isSprintActive 
+            background: isSprintActive
               ? "linear-gradient(145deg, rgba(249,115,22,0.95), rgba(234,88,12,0.95))"
               : "linear-gradient(145deg, rgba(100,100,100,0.9), rgba(70,70,70,0.9))",
-            boxShadow: isSprintActive 
+            boxShadow: isSprintActive
               ? "0 4px 15px rgba(249,115,22,0.5), inset 0 2px 4px rgba(255,255,255,0.2)"
               : "0 4px 15px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.1)",
             border: "2px solid rgba(255,255,255,0.2)",
           }}
         >
-          <span className="text-white text-lg font-bold">🏃</span>
+          <span className="text-white" aria-label="Sprint">
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M13 2L3 14h7l-1 8 10-12h-7z" />
+            </svg>
+          </span>
         </button>
       )}
 

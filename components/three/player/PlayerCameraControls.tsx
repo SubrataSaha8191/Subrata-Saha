@@ -54,11 +54,12 @@ export default function PlayerCameraControls() {
     };
 
     const onMouseMove = (e: MouseEvent) => {
-      // Lock camera when sitting - only allow limited vertical movement
+      // Sitting: allow full yaw + limited pitch
       if (sittingState.isSitting) {
         const sensitivity = 0.001;
-        // Only allow slight pitch adjustment, no yaw when sitting
+        const nextYaw = yaw - e.movementX * sensitivity;
         const nextPitch = pitch + e.movementY * sensitivity;
+        setYaw(nextYaw);
         setPitch(clamp(nextPitch, -0.3, 0.5));
         return;
       }

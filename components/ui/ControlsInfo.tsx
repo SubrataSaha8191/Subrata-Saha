@@ -72,7 +72,7 @@ export default function ControlsInfo() {
                                 <ControlItem keys={["Shift"]} action="Sprint" />
                                 <ControlItem keys={["Space"]} action="Jump" />
                                 <ControlItem keys={["Joystick (Mobile)"]} action="Move" />
-                                <ControlItem keys={["Tap ⬆ (Mobile)"]} action="Jump" />
+                                <ControlItem keys={["Tap Jump (Mobile)"]} action="Jump" />
                             </div>
                         </div>
 

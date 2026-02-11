@@ -31,7 +31,7 @@ export default function CharacterCustomizer() {
                    bg-linear-to-br from-purple-600 to-pink-600 
                    hover:from-purple-500 hover:to-pink-500
                    shadow-lg shadow-purple-500/30 
-                   flex items-center justify-center
+                   flex items-center justify-center ml-62 mt-10
                    transition-all duration-300 hover:scale-110
                    border-2 border-white/20`}
                 title="Customize Character"

@@ -13,7 +13,7 @@ export default function CanvasRoot({ children }: { children: React.ReactNode }) 
     <Canvas
       shadows={!isLoading && !isMobile}
       frameloop={isLoading ? "never" : "always"}
-      camera={{ fov: 60, near: 0.1, far: 300, position: [0, 8, 30] }}
+      camera={{ fov: isMobile ? 70 : 60, near: 0.1, far: 300, position: [0, 8, 30] }}
       gl={{
         antialias: false,
         powerPreference: isMobile ? "low-power" : "high-performance",

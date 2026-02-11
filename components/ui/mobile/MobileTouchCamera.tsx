@@ -55,8 +55,10 @@ export default function MobileTouchCamera() {
     const sensitivity = 0.005;
     
     if (sittingState.isSitting) {
-      // Only allow limited vertical movement when sitting
+      // Allow full yaw with limited pitch when sitting
+      const nextYaw = yawRef.current - deltaX * sensitivity;
       const nextPitch = pitchRef.current + deltaY * sensitivity;
+      setYaw(nextYaw);
       setPitch(clamp(nextPitch, -0.3, 0.5));
     } else {
       const nextYaw = yawRef.current - deltaX * sensitivity;
