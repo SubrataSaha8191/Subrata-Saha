@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
 const ROOM_WIDTH = 10;
 const ROOM_DEPTH = 10;
 const ROOM_HEIGHT = 5;
-const WALL_COLOR = "#3D3D3D"; // Dark industrial
+const WALL_COLOR = "#5A5A5A"; // Lighter industrial
 const SECRET_CODE = "4582";
 
 // Generator component
@@ -440,7 +440,7 @@ export default function ContactRoom() {
       {/* Ceiling */}
       <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, ROOM_HEIGHT, 0]}>
         <planeGeometry args={[ROOM_WIDTH, ROOM_DEPTH]} />
-        <meshStandardMaterial color="#2D2D2D" />
+        <meshStandardMaterial color="#4A4A4A" />
       </mesh>
 
       {/* Walls */}
@@ -508,13 +508,13 @@ export default function ContactRoom() {
       {/* Lighting - changes based on generator */}
       {isGeneratorOn ? (
         <>
-          <pointLight position={[0, ROOM_HEIGHT - 0.5, 0]} intensity={35} distance={12} decay={2} color="#FFFF99" />
-          <ambientLight intensity={0.3} />
+          <pointLight position={[0, ROOM_HEIGHT - 0.5, 0]} intensity={45} distance={14} decay={2} color="#FFF5B1" />
+          <ambientLight intensity={0.45} />
         </>
       ) : (
         <>
-          <pointLight position={[0, ROOM_HEIGHT - 0.5, 0]} intensity={3} distance={8} decay={2} color="#333344" />
-          <ambientLight intensity={0.1} />
+          <pointLight position={[0, ROOM_HEIGHT - 0.5, 0]} intensity={12} distance={12} decay={2} color="#666680" />
+          <ambientLight intensity={0.25} />
         </>
       )}
 

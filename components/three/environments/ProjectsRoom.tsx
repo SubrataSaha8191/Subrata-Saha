@@ -5,6 +5,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
 import { useMobileAwareKeyPress } from "@/hooks/useMobileAwareKeyPress";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { useGameStore } from "@/store/useGameStore";
 import { useUIStore } from "@/store/useUIStore";
 import Portal from "../interactables/Portal";
@@ -126,6 +127,8 @@ function RemoteInHand() {
 
 // HUGE 8K TV component with screen display
 function TV({ position, isOn, currentProject }: { position: [number, number, number]; isOn: boolean; currentProject: number }) {
+  const isMobile = useIsMobile();
+  const setCurrentProjectIndex = useGameStore((s) => s.setCurrentProjectIndex);
   const project = projects[currentProject] || projects[0];
   
   return (
@@ -155,7 +158,7 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
         <Html
           position={[0, -0.6, 0.05]}
           transform
-          distanceFactor={2.8}
+          distanceFactor={isMobile ? 2.2 : 2.8}
           style={{
             width: '1410px',
             height: '580px',
@@ -165,8 +168,81 @@ function TV({ position, isOn, currentProject }: { position: [number, number, num
             overflow: 'auto',
             boxShadow: 'inset 0 0 20px rgba(0,0,0,0.3)',
             pointerEvents: 'auto',
+            position: 'relative',
           }}
         >
+          {isMobile && (
+            <>
+              <button
+                onClick={() => setCurrentProjectIndex((currentProject - 1 + projects.length) % projects.length)}
+                style={{
+                  position: 'absolute',
+                  left: '18px',
+                  bottom: '18px',
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '999px',
+                  border: '2px solid rgba(255,255,255,0.2)',
+                  background: 'linear-gradient(145deg, rgba(59,130,246,0.9), rgba(37,99,235,0.9))',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.35)',
+                }}
+                aria-label="Previous project"
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M19 12H5" />
+                  <path d="M11 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setCurrentProjectIndex((currentProject + 1) % projects.length)}
+                style={{
+                  position: 'absolute',
+                  right: '18px',
+                  bottom: '18px',
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '999px',
+                  border: '2px solid rgba(255,255,255,0.2)',
+                  background: 'linear-gradient(145deg, rgba(59,130,246,0.9), rgba(37,99,235,0.9))',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.35)',
+                }}
+                aria-label="Next project"
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14" />
+                  <path d="M13 5l7 7-7 7" />
+                </svg>
+              </button>
+            </>
+          )}
           <div style={{ 
             width: '100%', 
             height: '100%', 
