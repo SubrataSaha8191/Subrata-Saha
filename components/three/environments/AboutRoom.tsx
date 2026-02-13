@@ -258,6 +258,7 @@ function WoodenDoor({ position, rotation = [0, 0, 0] }: { position: [number, num
 }
 
 export default function AboutRoom() {
+  const isMobile = useIsMobile();
   const playerPos = useGameStore((s) => s.playerPosition);
   const setPlayerPosition = useGameStore((s) => s.setPlayerPosition);
   const roomInteractionState = useGameStore((s) => s.roomInteractionState);
