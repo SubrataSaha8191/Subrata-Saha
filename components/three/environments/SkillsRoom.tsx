@@ -437,6 +437,7 @@ function WoodenDoor({ position, rotation = [0, 0, 0] }: { position: [number, num
         setLoadingStyle("dots");
         setLoading(true);
         exitRoom();
+        window.sessionStorage.setItem("skipPreloaderOnce", "1");
         router.push("/");
       }
       return;

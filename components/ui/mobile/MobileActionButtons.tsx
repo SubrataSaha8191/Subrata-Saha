@@ -98,6 +98,7 @@ export default function MobileActionButtons() {
     setLoading(true);
     exitRoom();
     setPrompt(null);
+    window.sessionStorage.setItem("skipPreloaderOnce", "1");
     router.push("/");
   }, [exitRoom, router, setLoading, setLoadingStyle, setPrompt]);
 

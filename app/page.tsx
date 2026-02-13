@@ -9,7 +9,7 @@ import MobileControls from "@/components/ui/mobile/MobileControls";
 import Preloader from "@/components/Preloader";
 import { useGameStore } from "@/store/useGameStore";
 
-const PRELOADER_KEY = "preloaderSeen";
+const SKIP_PRELOADER_KEY = "skipPreloaderOnce";
 
 export default function HomePage() {
   const [isReady, setIsReady] = useState(false);
@@ -20,10 +20,14 @@ export default function HomePage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const hasSeenPreloader = window.localStorage.getItem(PRELOADER_KEY) === "1";
-    setIsLoading(!hasSeenPreloader);
-    setShowContent(hasSeenPreloader);
-    setLoading(!hasSeenPreloader);
+    const shouldSkipPreloader =
+      window.sessionStorage.getItem(SKIP_PRELOADER_KEY) === "1";
+    if (shouldSkipPreloader) {
+      window.sessionStorage.removeItem(SKIP_PRELOADER_KEY);
+    }
+    setIsLoading(!shouldSkipPreloader);
+    setShowContent(shouldSkipPreloader);
+    setLoading(!shouldSkipPreloader);
     setLoadingStyle("panel");
     setIsReady(true);
     return () => setLoading(false);
@@ -43,7 +47,7 @@ export default function HomePage() {
     <>
       <div
         style={{
-          opacity: showContent ? 1 : 0,
+          opacity: isReady ? (showContent ? 1 : 0) : 1,
           transition: "opacity 0.8s ease-in-out",
           position: "fixed",
           inset: 0,
@@ -58,7 +62,6 @@ export default function HomePage() {
       {isReady && isLoading && (
         <Preloader
           onComplete={() => {
-            window.localStorage.setItem(PRELOADER_KEY, "1");
             setIsLoading(false);
             setLoading(false);
             setLoadingStyle("panel");

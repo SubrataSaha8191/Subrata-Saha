@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import FantasySky from "../environment/Sky";
@@ -17,6 +17,11 @@ import RealisticLighting from "../environment/Lighting";
 import AmbientSounds from "../environment/AmbientSounds";
 import { useGameStore } from "@/store/useGameStore";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useMobileAwareKeyPress } from "@/hooks/useMobileAwareKeyPress";
+import { useUIStore } from "@/store/useUIStore";
+
+const DRAGON_PROMPT = "Press E to open resume";
+const DRAGON_INTERACTION_DISTANCE = 6;
 
 // Component to switch between butterflies (day) and fireflies (night)
 function DayNightCreatures() {
@@ -356,6 +361,46 @@ function DragonStatue() {
 
 export default function HubWorld() {
   const isMobile = useIsMobile();
+  const playerPos = useGameStore((s) => s.playerPosition);
+  const setPrompt = useUIStore((s) => s.setInteractionPrompt);
+  const pressE = useMobileAwareKeyPress("KeyE");
+  const lastPressedRef = useRef(false);
+
+  useFrame(() => {
+    const playerVec = new THREE.Vector3(playerPos[0], playerPos[1], playerPos[2]);
+    const horizontalDistance = Math.hypot(playerVec.x, playerVec.z);
+    const isNearDragon = horizontalDistance < DRAGON_INTERACTION_DISTANCE;
+
+    if (isNearDragon) {
+      setPrompt(DRAGON_PROMPT);
+    } else {
+      const currentPrompt = useUIStore.getState().interactionPrompt;
+      if (currentPrompt === DRAGON_PROMPT) {
+        setPrompt(null);
+      }
+    }
+  });
+
+  useEffect(() => {
+    const justPressed = pressE && !lastPressedRef.current;
+    lastPressedRef.current = pressE;
+
+    if (!justPressed) return;
+
+    const playerVec = new THREE.Vector3(playerPos[0], playerPos[1], playerPos[2]);
+    const horizontalDistance = Math.hypot(playerVec.x, playerVec.z);
+    if (horizontalDistance >= DRAGON_INTERACTION_DISTANCE) return;
+
+    window.open("/Resume/Resume.pdf", "_blank", "noopener,noreferrer");
+  }, [playerPos, pressE]);
+
+  useEffect(() => {
+    return () => {
+      if (useUIStore.getState().interactionPrompt === DRAGON_PROMPT) {
+        setPrompt(null);
+      }
+    };
+  }, [setPrompt]);
 
   return (
     <group>
